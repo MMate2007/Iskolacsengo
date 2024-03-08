@@ -1,0 +1,14 @@
+[
+	{
+		"time": "08:00",
+		"file": "/home/pi/Desktop/sound.wav"
+	},
+	{
+		"time": "08:40",
+		"file": "/home/pi/Desktop/sound2.wav"
+	},
+	{
+		"time": "08:45",
+		"file": "sound3.wav"
+	}
+]
