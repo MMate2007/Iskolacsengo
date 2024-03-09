@@ -1,3 +1,4 @@
 {
-	"programmeFilePath": "example.programme.json"
+	"programmesDb": "programmes.db",
+	"usersDb": "users.db"
 }
