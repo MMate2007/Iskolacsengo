@@ -1,0 +1,31 @@
+CREATE TABLE patterns (
+	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	friendlyname TEXT,
+	description TEXT,
+	asset_ids TEXT
+);
+CREATE TABLE schedule (
+	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	pattern_id INTEGER NOT NULL,
+	schedule_type INTEGER NOT NULL,
+	start TIME NOT NULL,
+	end TIME,
+	asset_id INTEGER
+);
+CREATE TABLE assets (
+	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	asset_type INTEGER NOT NULL,
+	filepath TEXT NOT NULL,
+	volume INTEGER,
+	date DATE,
+	schedule_id INTEGER
+);
+CREATE TABLE music (
+	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	file TEXT NOT NULL,
+	length INTEGER NOT NULL,
+	artist TEXT,
+	title TEXT,
+	date DATE,
+	schedule_id INTEGER
+);
