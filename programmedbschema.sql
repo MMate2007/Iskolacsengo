@@ -20,6 +20,7 @@ CREATE TABLE assets (
 	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	asset_type INTEGER NOT NULL,
 	filepath TEXT NOT NULL,
+	length INTEGER NOT NULL,
 	volume INTEGER,
 	date DATE,
 	schedule_id INTEGER
