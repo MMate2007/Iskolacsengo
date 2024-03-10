@@ -1,20 +1,50 @@
+import sqlite3
 import json
 import pygame
-import time
+from datetime import datetime, timedelta
+from time import sleep
 
 pygame.init()
-
 with open("settings.json") as f:
-	settings = json.load(f)
-	
-with open(settings["programmeFilePath"]) as p:
-	programmes = json.load(p)
-	for prog in programmes:
-		prog["time"] = time.strptime(prog["time"], "%H:%M")
-		
+		settings = json.load(f)
+
+events = []
+
+class SoundEvent():
+	def __init__(self, time, sound, volume = 1):
+		self.time = time
+		self.sound = sound
+		self.volume = volume
+		if volume is None:
+			self.volume = 1
+	def play(self):
+		pygame.mixer.Channel(0).set_volume(self.volume)
+		pygame.mixer.Channel(0).play(pygame.mixer.Sound(self.sound))
+
+def readSettings():
+	with open("settings.json") as f:
+		settings = json.load(f)
+
+def loadTodaysProgramme():
+	loaddb = sqlite3.connect(settings["programmesDb"])
+	loadcursor = loaddb.cursor()
+	patternid = loadcursor.execute("SELECT pattern_id FROM dates WHERE date = DATE('now', 'localtime')").fetchone()[0]
+	results = loadcursor.execute("SELECT schedule_type, start, end, asset_id FROM schedule WHERE pattern_id = ? ORDER BY id", (patternid,)).fetchall()
+	for result in results:
+		if result[0] == 1:
+			assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classStartAssetId"],)).fetchone()
+			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], assetresult[1]))
+			assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classEndReminderAssetId"],)).fetchone()
+			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], assetresult[1]))
+			assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classEndAssetId"],)).fetchone()
+			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M"), assetresult[0], assetresult[1]))
+
+readSettings()
+loadTodaysProgramme()
+
 while True:
-	for prog in programmes:
-		if prog["time"].tm_hour == time.localtime().tm_hour and prog["time"].tm_min == time.localtime().tm_min:
-			pygame.mixer.Sound(prog["file"]).play()
-			programmes.remove(prog)
-	time.sleep(0.2)
+	for event in events:
+		if event.time.hour == datetime.now().hour and event.time.minute == datetime.now().minute:
+			event.play()
+			events.remove(event)
+	sleep(0.2)
