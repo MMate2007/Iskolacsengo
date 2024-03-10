@@ -28,7 +28,10 @@ def readSettings():
 def loadTodaysProgramme():
 	loaddb = sqlite3.connect(settings["programmesDb"])
 	loadcursor = loaddb.cursor()
-	patternid = loadcursor.execute("SELECT pattern_id FROM dates WHERE date = DATE('now', 'localtime')").fetchone()[0]
+	qresult = loadcursor.execute("SELECT pattern_id FROM dates WHERE date = DATE('now', 'localtime')").fetchone()
+	if qresult is None:
+		return
+	patternid = qresult[0]
 	results = loadcursor.execute("SELECT schedule_type, start, end, asset_id FROM schedule WHERE pattern_id = ? ORDER BY id", (patternid,)).fetchall()
 	for result in results:
 		if result[0] == 1:
