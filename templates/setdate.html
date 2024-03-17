@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}Csengetési rend beállítása{% endblock %}
+{% block headtitle %}Csengetési rend beállítása{% endblock %}
+{% block content %}
+
+<form method="post" action="#">
+    <div class="mb-3">
+        <label for="start" class="form-label">Kezdő nap:</label>
+        <input type="date" name="start" id="start" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label for="end" class="form-label">Utolsó nap:</label>
+        <input type="date" name="end" id="end" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label for="pattern">Csengetési rend:</label>
+        <select name="pattern" id="pattern" class="form-select" required>
+            {% for pattern in patterns %}
+                <option value="{{ pattern[0] }}">{{ pattern[1] }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Mentés</button>
+</form>
+
+{% endblock %}

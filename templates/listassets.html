@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}Fájlok{% endblock %}
+{% block headtitle %}Fájlok{% endblock %}
+{% block content %}
+<h2>Csengőhangok</h2>
+<a href="{{ url_for('uploadringtone') }}" class="btn btn-primary" role="button"><i class="bi bi-upload"></i> Csengőhang feltöltése</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Fájl</th>
+            <th>Hossz</th>
+            <th>Hangerő</th>
+            <th>Műveletek</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ringtone in ringtones %}
+        <tr>
+            <td>{{ ringtone[1] }}</td>
+            <td>
+                {% if ringtone[2] %}
+                {{ ringtone[2] }} másodperc
+                {% endif %}
+            </td>
+            <td>
+                {% if ringtone[3] %}
+                {{ ringtone[3] * 100 }}%
+                {% endif %}
+            </td>
+            <td>
+                <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=ringtone[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
