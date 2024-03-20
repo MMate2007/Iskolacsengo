@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+body { background-color: #dfdfdf; }
+.formcontainer { background-color: white; }
+{% endblock %}
+{% block content %}
+
+<div class="h-100 d-flex align-items-center justify-content-center">
+	<div class="formcontainer" style="border-radius: 10px; padding: 30px;">
+		<h1>Bejelentkezés</h1>
+		<form method="post" action="{{ url_for('login') }}">
+			<div class="input-group mb-3">
+				<span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+				<input type="text" class="form-control" name="name" required placeholder="Felhasználónév">
+			</div>
+			<div class="input-group mb-3">
+				<span class="input-group-text"><i class="bi bi-key-fill"></i></span>
+				<input type="password" name="password" id="password" class="form-control" required placeholder="Jelszó">
+			</div>
+			<button type="submit" class="btn btn-primary"><i class="bi bi-box-arrow-in-right"></i> Bejelentkezés</button>
+		</form>		
+	</div>
+</div>
+
+{% endblock %}

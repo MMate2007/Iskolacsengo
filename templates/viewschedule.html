@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}{{ pattern_name }} - Csengetési rend megtekintése{% endblock %}
+{% block headtitle %}{{ pattern_name }} - Csengetési rend megtekintése{% endblock %}
+{% block content %}
+<a href="{{ url_for('addevent', patternid=patternid, eventtype=1) }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Tanóra hozzáadása</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Típus</th>
+            <th>Idő</th>
+            <th>Műveletek</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for event in schedule %}
+        <tr>
+            <td>
+                {% if event[1] == 1 %}
+                    óra
+                {% endif %}
+            </td>
+            <td>
+                {{ event[2] }}
+                {% if event[3] != None %}
+                     - {{ event[3] }}
+                {% endif %}
+            </td>
+            <td>
+                <a class="btn btn-danger" role="button" href="{{ url_for('deleteschedule', id=event[0], patternid=patternid) }}"><i class="bi bi-trash"></i> Törlés</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}Adminisztráció{% endblock %}
+{% block headtitle %}Adminisztráció{% endblock %}
+{% block content %}
+
+<p>Be vagyunk jelentkezve!</p>
+<a href="{{ url_for('reload') }}" class="btn btn-primary" role="button"><i class="bi bi-arrow-clockwise"></i> Újratöltés</a>
+<a href="{{ url_for('reboot') }}" class="btn btn-warning" role="button"><i class="bi bi-arrow-clockwise"></i> Újraindítás</a>
+<a href="{{ url_for('shutdown') }}" class="btn btn-danger" role="button"><i class="bi bi-toggle-off"></i> Leállítás</a>
+
+
+{% endblock %}

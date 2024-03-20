@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}Beállítások{% endblock %}
+{% block headtitle %}Beállítások{% endblock %}
+{% block content %}
+
+<form method="post" action="#">
+    <div class="mb-3">
+        <label for="programmesDb" class="form-label">Programok adatbázisa:</label>
+        <input type="text" name="programmesDb" id="programmesDb" class="form-control" required value="{{ settings['programmesDb'] }}">
+    </div>
+    <div class="mb-3">
+        <label for="usersDb" class="form-label">Felhasználók adatbázisa:</label>
+        <input type="text" name="usersDb" id="usersDb" class="form-control" required value="{{ settings['usersDb'] }}">
+    </div>
+    <div class="mb-3">
+        <label for="classStartAssetId" class="form-label">Becsengetéskor lejátszandó fájl:</label>
+        <select name="classStartAssetId" id="classStartAssetId" class="form-select">
+            {% for ringtone in ringtones %}
+                <option value="{{ ringtone[0] }}" {{ 'selected' if ringtone[0] == settings['classStartAssetId'] }}>{{ ringtone[1] }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="classEndReminderAssetId" class="form-label">Jelzőcsengetéskor lejátszandó fájl:</label>
+        <select name="classEndReminderAssetId" id="classEndReminderAssetId" class="form-select">
+            {% for ringtone in ringtones %}
+                <option value="{{ ringtone[0] }}" {{ 'selected' if ringtone[0] == settings['classEndReminderAssetId'] }}>{{ ringtone[1] }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="classEndReminderMin" class="form-label">Jelzőcsengő a tanóra vége előtt:</label>
+        <input type="number" name="classEndReminderMin" id="classEndReminderMin" class="form-control" required value="{{ settings['classEndReminderMin'] }}"> perccel
+    </div>
+    <div class="mb-3">
+        <label for="classEndAssetId" class="form-label">Kicsengetéskor lejátszandó fájl:</label>
+        <select name="classEndAssetId" id="classEndAssetId" class="form-select">
+            {% for ringtone in ringtones %}
+                <option value="{{ ringtone[0] }}" {{ 'selected' if ringtone[0] == settings['classEndAssetId'] }}>{{ ringtone[1] }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="uploadFolder" class="form-label">Fájlok feltöltése ebbe a mappába:</label>
+        <input type="text" name="uploadFolder" id="uploadFolder" class="form-control" required value="{{ settings['uploadFolder'] }}">
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Mentés</button>
+</form>
+
+{% endblock %}

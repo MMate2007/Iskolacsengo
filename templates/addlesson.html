@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}{{ pattern_name }} - Tanóra hozzáadása{% endblock %}
+{% block headtitle %}{{ pattern_name }} - Tanóra hozzáadása{% endblock %}
+{% block content %}
+
+<form method="post" action="#">
+    <div class="mb-3">
+        <label for="start" class="form-label">Kezdés:</label>
+        <input type="time" class="form-control" name="start" id="start">
+    </div>
+    <div class="mb-3">
+        <label for="end" class="form-label">Vége:</label>
+        <input type="time" class="form-control" name="end" id="end">
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Mentés</button>
+</form>
+
+{% endblock %}
