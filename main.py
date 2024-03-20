@@ -46,6 +46,8 @@ def loadTodaysProgramme():
 	lastloaded = datetime.now().day
 	loaddb = sqlite3.connect(settings["programmesDb"])
 	loadcursor = loaddb.cursor()
+	loadcursor.execute("DELETE FROM dates WHERE date < DATE('now', 'localtime')")
+	loaddb.commit()
 	result = loadcursor.execute("SELECT pattern_id FROM dates WHERE date = DATE('now', 'localtime')").fetchone()
 	if result is None:
 		return
