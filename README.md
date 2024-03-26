@@ -1,6 +1,16 @@
 # Iskolacsengő
 A Raspberry Pi controlled school bell system. - Egy iskolai csengővezérlő Raspberry Pivel meghajtva.
 
+## Funkciók
+- vezérlés böngészőből (a Pi újraindítása és leállítása is lehetséges böngészőből)
+- több felhasználó támogatása
+- több csengetési rend mentése
+- csengetési rendek hozzárendelése napokhoz
+- fájlok feltöltése böngészőből
+- felhasználók létrehozása és törlése böngészőből
+- beállítások módosítása böngészőből
+- egyedi csengetési hangok beállítása adott napra
+
 ## Telepítés
 Előfeltételek:
   - Python legalább 3-as verziója
