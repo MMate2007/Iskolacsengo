@@ -47,22 +47,34 @@ def loadTodaysProgramme():
 	loaddb = sqlite3.connect(settings["programmesDb"])
 	loadcursor = loaddb.cursor()
 	loadcursor.execute("DELETE FROM dates WHERE date < DATE('now', 'localtime')")
+	loadcursor.execute("DELETE FROM customsounds WHERE date < DATE('now', 'localtime')")
 	loaddb.commit()
 	result = loadcursor.execute("SELECT pattern_id FROM dates WHERE date = DATE('now', 'localtime')").fetchone()
 	if result is None:
 		return
 	patternid = result[0]
-	results = loadcursor.execute("SELECT schedule_type, start, end, asset_id FROM schedule WHERE pattern_id = ? ORDER BY id", (patternid,)).fetchall()
+	results = loadcursor.execute("SELECT schedule_type, start, end, id FROM schedule WHERE pattern_id = ? ORDER BY id", (patternid,)).fetchall()
 	for result in results:
 		if result[0] == 1:
-			assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classStartAssetId"],)).fetchone()
+			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 1", (result[3], )).fetchone()
+			if customfileresult is None:
+				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classStartAssetId"],)).fetchone()
+			else:
+				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
 			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], assetresult[1]))
-			assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classEndReminderAssetId"],)).fetchone()
+			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 2", (result[3], )).fetchone()
+			if customfileresult is None:
+				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classEndReminderAssetId"],)).fetchone()
+			else:
+				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
 			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], assetresult[1]))
-			assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classEndAssetId"],)).fetchone()
+			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 3", (result[3], )).fetchone()
+			if customfileresult is None:
+				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classEndAssetId"],)).fetchone()
+			else:
+				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
 			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M"), assetresult[0], assetresult[1]))
 	loaddb.close()
-
 
 class User():
 	def __init__(self, id):
@@ -294,7 +306,6 @@ def uploadringtone():
 		db = sqlite3.connect(settings["programmesDb"])
 		cursor = db.cursor()
 		result = cursor.execute("SELECT id FROM assets WHERE filepath = ?", (file.filename, )).fetchall()
-		print(result)
 		db.close()
 		if not result:
 			if file and allowed_file(file.filename):
@@ -325,6 +336,45 @@ def deleteasset(id):
 	os.remove(result[0])
 	flash("Fájl sikeresen törölve!", "success")
 	return redirect(url_for("listassets"))
+
+@app.route("/setcustomfile/<date>", methods=("GET", "POST"))
+@login_required
+def setcustomfile(date):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	ringtones = cursor.execute("SELECT id, filepath, asset_type FROM assets").fetchall()
+	patternid = cursor.execute("SELECT pattern_id FROM dates WHERE date = ?", (date, )).fetchone()
+	schedule = cursor.execute("SELECT id, schedule_type, start, end FROM schedule WHERE pattern_id = ? ORDER BY start", (patternid[0], )).fetchall()
+	customfiles = cursor.execute("SELECT id, asset_id, schedule_id, params FROM customsounds WHERE date = ?", (date, )).fetchall()
+	db.close()
+	if request.method == "POST":
+		db = sqlite3.connect(settings["programmesDb"])
+		cursor = db.cursor()
+		for s in schedule:
+			if s[1] == 1:
+				start = request.form.get(str(s[0])+"start")
+				reminder = request.form.get(str(s[0])+"reminder")
+				end = request.form.get(str(s[0])+"end")
+				if start != "null":
+					cursor.execute("INSERT INTO customsounds (date, asset_id, schedule_id, params) VALUES (?, ?, ?, '1')", (date, start, s[0]))
+				else:
+					cursor.execute("DELETE FROM customsounds WHERE date = ? AND schedule_id = ? AND params = '1'", (date, s[0]))
+				if reminder != "null":
+					cursor.execute("INSERT INTO customsounds (date, asset_id, schedule_id, params) VALUES (?, ?, ?, '2')", (date, reminder, s[0]))
+				else:
+					cursor.execute("DELETE FROM customsounds WHERE date = ? AND schedule_id = ? AND params = '2'", (date, s[0]))
+				if end != "null":
+					cursor.execute("INSERT INTO customsounds (date, asset_id, schedule_id, params) VALUES (?, ?, ?, '3')", (date, end, s[0]))
+				else:
+					cursor.execute("DELETE FROM customsounds WHERE date = ? AND schedule_id = ? AND params = '3'", (date, s[0]))
+				db.commit()
+		flash("Sikeres mentés!", "success")
+		ringtones = cursor.execute("SELECT id, filepath, asset_type FROM assets").fetchall()
+		patternid = cursor.execute("SELECT pattern_id FROM dates WHERE date = ?", (date, )).fetchone()
+		schedule = cursor.execute("SELECT id, schedule_type, start, end FROM schedule WHERE pattern_id = ? ORDER BY start", (patternid[0], )).fetchall()
+		customfiles = cursor.execute("SELECT id, asset_id, schedule_id, params FROM customsounds WHERE date = ?", (date, )).fetchall()
+		db.close()
+	return render_template("setcustomfile.html", ringtones=ringtones, schedule=schedule, customfiles=customfiles)
 
 @app.route("/register", methods=("GET", "POST"))
 @login_required
@@ -379,7 +429,6 @@ def settings():
 		with open("settings.json", "w") as f:
 			json.dump(settings, f)
 		flash("Sikeres módosítás!", "success")
-		print(settings)
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
 	ringtones = cursor.execute("SELECT id, filepath FROM assets WHERE asset_type = 1").fetchall()

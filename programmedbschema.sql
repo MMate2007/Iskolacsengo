@@ -2,8 +2,7 @@ DROP TABLE IF EXISTS patterns;
 CREATE TABLE patterns (
 	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	friendlyname TEXT,
-	description TEXT,
-	asset_ids TEXT
+	description TEXT
 );
 DROP TABLE IF EXISTS schedule;
 CREATE TABLE schedule (
@@ -26,8 +25,7 @@ CREATE TABLE assets (
 	filepath TEXT NOT NULL,
 	length INTEGER,
 	volume INTEGER,
-	date DATE,
-	schedule_id INTEGER
+	date DATE
 );
 DROP TABLE IF EXISTS music;
 CREATE TABLE music (
@@ -36,6 +34,13 @@ CREATE TABLE music (
 	length INTEGER NOT NULL,
 	artist TEXT,
 	title TEXT,
-	date DATE,
-	schedule_id INTEGER
+	date DATE
+);
+DROP TABLE IF EXISTS customsounds;
+CREATE TABLE customsounds (
+	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	asset_id INTEGER NOT NULL,
+	date DATE NOT NULL,
+	schedule_id INTEGER NOT NULL,
+	params TEXT
 );
