@@ -6,6 +6,9 @@
 {% block content %}
 <h2>Csengőhangok</h2>
 <a href="{{ url_for('uploadringtone') }}" class="btn btn-primary" role="button"><i class="bi bi-upload"></i> Csengőhang feltöltése</a>
+{% if previewplaying %}
+<a href="{{ url_for('stoppreview') }}" class="btn btn-danger" role="button"><i class="bi bi-stop-fill"></i> Lejátszás leállítása</a>
+{% endif %}
 <table class="table">
     <thead>
         <tr>
@@ -30,6 +33,7 @@
                 {% endif %}
             </td>
             <td>
+                <a href="{{ url_for('playasset', id=ringtone[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
                 <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=ringtone[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
             </td>
         </tr>

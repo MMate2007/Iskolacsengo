@@ -24,16 +24,24 @@ app.config["UPLOAD_FOLDER"] = settings["uploadFolder"]
 events = []
 lastloaded = 0
 settings = []
+bellEnabled = True
+
+@app.route("/time")
+def time():
+	return datetime.now().strftime("%H:%M:%S")
+
 class SoundEvent():
-	def __init__(self, time, sound, volume = 1):
+	def __init__(self, time, sound, type, volume = 1):
 		self.time = time
 		self.sound = sound
 		self.volume = volume
+		self.type = type
 		if volume is None:
 			self.volume = 1
 	def play(self):
-		pygame.mixer.Channel(0).set_volume(self.volume)
-		pygame.mixer.Channel(0).play(pygame.mixer.Sound(self.sound))
+		if self.type == 1:
+			pygame.mixer.Channel(0).set_volume(self.volume)
+			pygame.mixer.Channel(0).play(pygame.mixer.Sound(self.sound))
 
 def readSettings():
 	global settings
@@ -61,19 +69,19 @@ def loadTodaysProgramme():
 				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classStartAssetId"],)).fetchone()
 			else:
 				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], assetresult[1]))
+			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1, assetresult[1]))
 			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 2", (result[3], )).fetchone()
 			if customfileresult is None:
 				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classEndReminderAssetId"],)).fetchone()
 			else:
 				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], assetresult[1]))
+			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], 1, assetresult[1]))
 			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 3", (result[3], )).fetchone()
 			if customfileresult is None:
 				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classEndAssetId"],)).fetchone()
 			else:
 				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M"), assetresult[0], assetresult[1]))
+			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M"), assetresult[0], 1, assetresult[1]))
 	loaddb.close()
 
 class User():
@@ -145,7 +153,7 @@ def logout():
 @app.route("/admin")
 @login_required
 def admin():
-	return render_template("admin.html")
+	return render_template("admin.html", bellEnabled=bellEnabled)
 
 @app.route("/reload")
 @login_required
@@ -164,6 +172,17 @@ def reboot():
 @login_required
 def shutdown():
 	os.system("sudo shutdown now")
+	return redirect(url_for("admin"))
+
+@app.route("/changeBellStatus")
+@login_required
+def changeBellStatus():
+	global bellEnabled
+	if bellEnabled == True:
+		bellEnabled = False
+		pygame.mixer.Channel(0).stop()
+	elif bellEnabled == False:
+		bellEnabled = True
 	return redirect(url_for("admin"))
 
 @app.route("/setpatterns", methods=("GET", "POST"))
@@ -292,7 +311,7 @@ def listassets():
 	cursor = db.cursor()
 	ringtones = cursor.execute("SELECT id, filepath, length, volume FROM assets WHERE asset_type = 1").fetchall()
 	db.close()
-	return render_template("listassets.html", ringtones=ringtones)
+	return render_template("listassets.html", ringtones=ringtones, previewplaying=pygame.mixer.Channel(3).get_busy())
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -335,6 +354,22 @@ def deleteasset(id):
 	db.close()
 	os.remove(result[0])
 	flash("Fájl sikeresen törölve!", "success")
+	return redirect(url_for("listassets"))
+
+@app.route("/playasset/<int:id>")
+@login_required
+def playasset(id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	result = cursor.execute("SELECT filepath FROM assets WHERE id = ?", (id,)).fetchone()
+	db.close()
+	pygame.mixer.Channel(3).play(pygame.mixer.Sound(result[0]))
+	return redirect(url_for("listassets"))
+
+@app.route("/stoppreview")
+@login_required
+def stoppreview():
+	pygame.mixer.Channel(3).stop()
 	return redirect(url_for("listassets"))
 
 @app.route("/setcustomfile/<date>", methods=("GET", "POST"))
@@ -437,13 +472,16 @@ def settings():
 
 readSettings()
 loadTodaysProgramme()
-thread = threading.Thread(target=lambda: app.run(debug=False, host="0.0.0.0", use_reloader=False))
+thread = threading.Thread(target=lambda: app.run(debug=True, host="0.0.0.0", use_reloader=False))
 thread.setDaemon(True)
 thread.start()
 while True:
 	if lastloaded != datetime.now().day:
 		loadTodaysProgramme()
 	for event in events:
+		if event.type == 1 and bellEnabled == False:
+			events.remove(event)
+			continue
 		if event.time.hour == datetime.now().hour and event.time.minute == datetime.now().minute:
 			event.play()
 			events.remove(event)
