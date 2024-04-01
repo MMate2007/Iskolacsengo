@@ -10,6 +10,8 @@ A Raspberry Pi controlled school bell system. - Egy iskolai csengővezérlő Ras
 - felhasználók létrehozása és törlése böngészőből
 - beállítások módosítása böngészőből
 - egyedi csengetési hangok beállítása adott napra
+- csengetés szüneteltetése
+- fájlok manuális lejátszása
 
 ## Telepítés
 Előfeltételek:
