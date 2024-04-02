@@ -59,7 +59,7 @@ def loadTodaysProgramme():
 	if result is None:
 		return
 	patternid = result[0]
-	results = loadcursor.execute("SELECT schedule_type, start, end, id FROM schedule WHERE pattern_id = ? ORDER BY id", (patternid,)).fetchall()
+	results = loadcursor.execute("SELECT schedule_type, start, end, id, asset_id FROM schedule WHERE pattern_id = ? ORDER BY id", (patternid,)).fetchall()
 	for result in results:
 		if result[0] == 1:
 			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 1", (result[3], )).fetchone()
@@ -80,6 +80,13 @@ def loadTodaysProgramme():
 			else:
 				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
 			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M"), assetresult[0], 1, assetresult[1]))
+		if result[0] == 2:
+			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ?", (result[3], )).fetchone()
+			if customfileresult is None:
+				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (result[4],)).fetchone()
+			else:
+				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
+			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1, assetresult[1]))
 	loaddb.close()
 
 class User():
@@ -267,7 +274,7 @@ def deletepattern(id):
 def viewschedule(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	results = cursor.execute("SELECT id, schedule_type, start, end FROM schedule WHERE pattern_id = ? ORDER BY start", (id,)).fetchall()
+	results = cursor.execute("SELECT schedule.id, schedule_type, start, end, filepath FROM schedule LEFT OUTER JOIN assets ON schedule.asset_id = assets.id WHERE pattern_id = ? ORDER BY start", (id,)).fetchall()
 	name = cursor.execute("SELECT friendlyname FROM patterns WHERE id = ?", (id,)).fetchone()
 	db.close()
 	return render_template("viewschedule.html", schedule=results, pattern_name=name[0], patternid=id)
@@ -301,6 +308,21 @@ def addevent(patternid, eventtype):
 			flash("Tanóra sikeresen hozzáadva a csengetési rendhez!", "success")
 			db.close()
 		return render_template("addlesson.html", pattern_name=name[0])
+	elif eventtype == 2:
+		if request.method == "POST":
+			time = request.form.get("time")
+			assetid = request.form.get("asset")
+			db = sqlite3.connect(settings["programmesDb"])
+			cursor = db.cursor()
+			cursor.execute("INSERT INTO schedule (pattern_id, schedule_type, start, asset_id) VALUES (?,2,?,?)", (patternid,time,assetid))
+			db.commit()
+			flash("Csengetés sikeresen hozzáadva a csengetési rendhez!", "success")
+			db.close()
+		db = sqlite3.connect(settings["programmesDb"])
+		cursor = db.cursor()
+		ringtones = cursor.execute("SELECT id, filepath FROM assets WHERE asset_type = 1").fetchall()
+		db.close()
+		return render_template("addring.html", pattern_name=name[0], ringtones=ringtones)
 
 @app.route("/listassets")
 @login_required
@@ -377,7 +399,7 @@ def setcustomfile(date):
 	cursor = db.cursor()
 	ringtones = cursor.execute("SELECT id, filepath, asset_type FROM assets").fetchall()
 	patternid = cursor.execute("SELECT pattern_id FROM dates WHERE date = ?", (date, )).fetchone()
-	schedule = cursor.execute("SELECT id, schedule_type, start, end FROM schedule WHERE pattern_id = ? ORDER BY start", (patternid[0], )).fetchall()
+	schedule = cursor.execute("SELECT id, schedule_type, start, end, asset_id FROM schedule WHERE pattern_id = ? ORDER BY start", (patternid[0], )).fetchall()
 	customfiles = cursor.execute("SELECT id, asset_id, schedule_id, params FROM customsounds WHERE date = ?", (date, )).fetchall()
 	db.close()
 	if request.method == "POST":
@@ -400,6 +422,13 @@ def setcustomfile(date):
 					cursor.execute("INSERT INTO customsounds (date, asset_id, schedule_id, params) VALUES (?, ?, ?, '3')", (date, end, s[0]))
 				else:
 					cursor.execute("DELETE FROM customsounds WHERE date = ? AND schedule_id = ? AND params = '3'", (date, s[0]))
+				db.commit()
+			if s[1] == 2:
+				sound = request.form.get(str(s[0]))
+				if sound != "null":
+					cursor.execute("INSERT INTO customsounds (date, asset_id, schedule_id) VALUES (?, ?, ?)", (date, sound, s[0]))
+				else:
+					cursor.execute("DELETE FROM customsounds WHERE date = ? AND schedule_id = ?", (date, s[0]))
 				db.commit()
 		flash("Sikeres mentés!", "success")
 		ringtones = cursor.execute("SELECT id, filepath, asset_type FROM assets").fetchall()

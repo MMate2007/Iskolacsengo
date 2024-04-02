@@ -5,11 +5,13 @@
 {% block headtitle %}{{ pattern_name }} - Csengetési rend megtekintése{% endblock %}
 {% block content %}
 <a href="{{ url_for('addevent', patternid=patternid, eventtype=1) }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Tanóra hozzáadása</a>
+<a href="{{ url_for('addevent', patternid=patternid, eventtype=2) }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Csengetés hozzáadása</a>
 <table class="table">
     <thead>
         <tr>
             <th>Típus</th>
             <th>Idő</th>
+            <th>Fájl</th>
             <th>Műveletek</th>
         </tr>
     </thead>
@@ -19,12 +21,21 @@
             <td>
                 {% if event[1] == 1 %}
                     tanóra
+                {% elif event[1] == 2 %}
+                    csengetés
                 {% endif %}
             </td>
             <td>
                 {{ event[2] }}
                 {% if event[3] != None %}
                      - {{ event[3] }}
+                {% endif %}
+            </td>
+            <td>
+                {% if event[4] != None %}
+                {{ event[4] }}
+                {% else %}
+                -
                 {% endif %}
             </td>
             <td>
