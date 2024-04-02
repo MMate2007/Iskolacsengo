@@ -1,2 +1,4 @@
 .DS_Store
 settings.json
+programmes.db
+users.db
