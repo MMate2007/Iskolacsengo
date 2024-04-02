@@ -9,6 +9,7 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from werkzeug.utils import secure_filename
 import os
 import threading
+import math
 
 allowedfiles = ["wav", "mp3", "ogg"]
 
@@ -41,6 +42,7 @@ class SoundEvent():
 
 def readSettings():
 	global settings
+	settings = []
 	with open("settings.json") as f:
 		settings = json.load(f)
 
@@ -328,7 +330,7 @@ def uploadringtone():
 				file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
 				db = sqlite3.connect(settings["programmesDb"])
 				cursor = db.cursor()
-				cursor.execute("INSERT INTO assets (asset_type, filepath) VALUES (1,?)", (os.path.join(app.config["UPLOAD_FOLDER"], filename),))
+				cursor.execute("INSERT INTO assets (asset_type, filepath, length) VALUES (1,?,?)", (os.path.join(app.config["UPLOAD_FOLDER"], filename), math.ceil(pygame.mixer.Sound(os.path.join(app.config["UPLOAD_FOLDER"], filename)).get_length())))
 				db.commit()
 				flash("Fájl sikeresen feltöltve!", "success")
 				db.close()
