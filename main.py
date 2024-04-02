@@ -26,10 +26,6 @@ lastloaded = 0
 settings = []
 bellEnabled = True
 
-@app.route("/time")
-def time():
-	return datetime.now().strftime("%H:%M:%S")
-
 class SoundEvent():
 	def __init__(self, time, sound, type, volume = 1):
 		self.time = time
