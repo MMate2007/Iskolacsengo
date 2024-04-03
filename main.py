@@ -1,5 +1,7 @@
 import sqlite3
 import json
+import os
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 import pygame
 from datetime import datetime, timedelta
 from time import sleep
@@ -7,7 +9,6 @@ from flask import Flask, render_template, request, url_for, redirect, flash
 import bcrypt
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
-import os
 import threading
 from math import ceil
 
