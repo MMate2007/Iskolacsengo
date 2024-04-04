@@ -17,6 +17,9 @@
         <tr>
             <td>{{ user[1] }}</td>
             <td>
+                {% if current_user.id|int == user[0] %}
+                <a href="{{ url_for('changepassword') }}" class="btn btn-warning" role="button"><i class="bi bi-key"></i> Jelszóváltoztatás</a>
+                {% endif %}
                 <a class="btn btn-danger" role="button" href="{{ url_for('deleteuser', id=user[0]) }}"><i class="bi bi-person-x"></i> Törlés</a>
             </td>
         </tr>

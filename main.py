@@ -161,6 +161,24 @@ def logout():
 def admin():
 	return render_template("admin.html", bellEnabled=bellEnabled)
 
+@app.route("/changepassword", methods=("GET", "POST"))
+@login_required
+def changepassword():
+	if request.method == "POST":
+		password = request.form.get("pass")
+		password2 = request.form.get("pass2")
+		if password != password2:
+			flash("A két jelszó nem egyezik meg!", "warning")
+			return render_template("changepassword.html")
+		db = sqlite3.connect(settings["usersDb"])
+		cursor = db.cursor()
+		cursor.execute("UPDATE users SET password = ? WHERE id = ?", (bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()), current_user.id))
+		db.commit()
+		flash("Sikeres jelszómódosítás!", "success")
+		db.close()
+		return redirect(url_for("logout"))
+	return render_template("changepassword.html")
+
 @app.route("/reload")
 @login_required
 def reload():
