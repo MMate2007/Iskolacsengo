@@ -360,26 +360,26 @@ def allowed_file(filename):
 @login_required
 def uploadringtone():
 	if request.method == "POST":
-		file = request.files["file"]
+		files = request.files.getlist("file")
 		db = sqlite3.connect(settings["programmesDb"])
 		cursor = db.cursor()
-		result = cursor.execute("SELECT id FROM assets WHERE filepath = ?", (file.filename, )).fetchall()
-		db.close()
-		if not result:
-			if file and allowed_file(file.filename):
-				filename = secure_filename(file.filename)
-				file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-				db = sqlite3.connect(settings["programmesDb"])
-				cursor = db.cursor()
-				cursor.execute("INSERT INTO assets (asset_type, filepath, length) VALUES (1,?,?)", (os.path.join(app.config["UPLOAD_FOLDER"], filename), ceil(pygame.mixer.Sound(os.path.join(app.config["UPLOAD_FOLDER"], filename)).get_length())))
-				db.commit()
-				flash("Fájl sikeresen feltöltve!", "success")
-				db.close()
-				redirect(url_for("listassets"))
+		for file in files:
+			result = cursor.execute("SELECT id FROM assets WHERE filepath = ?", (file.filename, )).fetchall()
+			if not result:
+				if file and allowed_file(file.filename):
+					filename = secure_filename(file.filename)
+					file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+					db = sqlite3.connect(settings["programmesDb"])
+					cursor = db.cursor()
+					cursor.execute("INSERT INTO assets (asset_type, filepath, length) VALUES (1,?,?)", (os.path.join(app.config["UPLOAD_FOLDER"], filename), ceil(pygame.mixer.Sound(os.path.join(app.config["UPLOAD_FOLDER"], filename)).get_length())))
+					db.commit()
+					flash(os.path.join(app.config["UPLOAD_FOLDER"], filename)+" - Fájl sikeresen feltöltve!", "success")
+				else:
+					flash(os.path.join(app.config["UPLOAD_FOLDER"], filename)+" - Nem engedélyezett fájlnév!", "danger")
 			else:
-				flash("Nem engedélyezett fájlnév!", "danger")
-		else:
-			flash("Ilyen nevű fájl már létezik!", "danger")
+				flash(os.path.join(app.config["UPLOAD_FOLDER"], filename)+" - Ilyen nevű fájl már létezik!", "danger")
+		redirect(url_for("listassets"))
+		db.close()
 	return render_template("uploadringtone.html")
 
 @app.route("/deleteasset/<int:id>")
