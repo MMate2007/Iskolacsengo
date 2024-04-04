@@ -8,11 +8,11 @@
 <form method="post" action="#">
     <div class="mb-3">
         <label for="time" class="form-label">Idő:</label>
-        <input type="time" class="form-control" name="time" id="time" autofocus>
+        <input type="time" class="form-control" name="time" id="time" autofocus required>
     </div>
     <div class="mb-3">
         <label for="asset">Csengőhang:</label>
-        <select name="asset" id="asset" class="form-select">
+        <select name="asset" id="asset" class="form-select" required>
             {% for ringtone in ringtones %}
                 <option value="{{ ringtone[0] }}">{{ ringtone[1] }}</option>
             {% endfor %}

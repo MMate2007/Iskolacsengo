@@ -32,7 +32,7 @@
                 <td>
                     {% if event[1] == 1 %}
                         <label for="{{ event[0] }}start">Becsengetés:</label>
-                        <select name="{{ event[0] }}start" id="{{ event[0] }}start" class="form-select">
+                        <select name="{{ event[0] }}start" id="{{ event[0] }}start" class="form-select" required>
                             <option value="null">Alapértelmezett</option>
                             {% for ringtone in ringtones %}
                                 {% if ringtone[2] == 1 %}
@@ -47,7 +47,7 @@
                             {% endfor %}
                         </select>
                         <label for="{{ event[0] }}reminder">Jelzőcsengetés:</label>
-                        <select name="{{ event[0] }}reminder" id="{{ event[0] }}reminder" class="form-select">
+                        <select name="{{ event[0] }}reminder" id="{{ event[0] }}reminder" class="form-select" required>
                             <option value="null">Alapértelmezett</option>
                             {% for ringtone in ringtones %}
                                 {% if ringtone[2] == 1 %}
@@ -62,7 +62,7 @@
                             {% endfor %}
                         </select>
                         <label for="{{ event[0] }}end">Kicsengetés:</label>
-                        <select name="{{ event[0] }}end" id="{{ event[0] }}end" class="form-select">
+                        <select name="{{ event[0] }}end" id="{{ event[0] }}end" class="form-select" required>
                             <option value="null">Alapértelmezett</option>
                             {% for ringtone in ringtones %}
                                 {% if ringtone[2] == 1 %}
@@ -78,7 +78,7 @@
                         </select>
                     {% elif event[1] == 2 %}
                     <label for="{{ event[0] }}">Csengőhang:</label>
-                    <select name="{{ event[0] }}" id="{{ event[0] }}" class="form-select">
+                    <select name="{{ event[0] }}" id="{{ event[0] }}" class="form-select" required>
                         <option value="null">Alapértelmezett</option>
                         {% for ringtone in ringtones %}
                             {% if ringtone[2] == 1 %}
