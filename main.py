@@ -378,8 +378,8 @@ def uploadringtone():
 					flash(os.path.join(app.config["UPLOAD_FOLDER"], filename)+" - Nem engedélyezett fájlnév!", "danger")
 			else:
 				flash(os.path.join(app.config["UPLOAD_FOLDER"], filename)+" - Ilyen nevű fájl már létezik!", "danger")
-		redirect(url_for("listassets"))
 		db.close()
+		return redirect(url_for("listassets"))
 	return render_template("uploadringtone.html")
 
 @app.route("/deleteasset/<int:id>")
