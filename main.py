@@ -364,10 +364,10 @@ def uploadringtone():
 		db = sqlite3.connect(settings["programmesDb"])
 		cursor = db.cursor()
 		for file in files:
-			result = cursor.execute("SELECT id FROM assets WHERE filepath = ?", (file.filename, )).fetchall()
+			filename = secure_filename(file.filename)
+			result = cursor.execute("SELECT id FROM assets WHERE filepath = ?", (os.path.join(app.config["UPLOAD_FOLDER"], filename), )).fetchall()
 			if not result:
 				if file and allowed_file(file.filename):
-					filename = secure_filename(file.filename)
 					file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
 					db = sqlite3.connect(settings["programmesDb"])
 					cursor = db.cursor()
