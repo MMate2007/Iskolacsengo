@@ -4,11 +4,12 @@
 {% block title %}Fájlok{% endblock %}
 {% block headtitle %}Fájlok{% endblock %}
 {% block content %}
-<h2>Csengőhangok</h2>
-<a href="{{ url_for('uploadringtone') }}" class="btn btn-primary" role="button"><i class="bi bi-upload"></i> Csengőhang feltöltése</a>
 {% if previewplaying %}
 <a href="{{ url_for('stoppreview') }}" class="btn btn-danger" role="button"><i class="bi bi-stop-fill"></i> Lejátszás leállítása</a>
 {% endif %}
+{% if current_user.haspermission('listringtones') %}
+<h2>Csengőhangok</h2>
+<a href="{{ url_for('uploadfile') }}" class="btn btn-primary" role="button"><i class="bi bi-upload"></i> Csengőhang feltöltése</a>
 <div class="table-responsive">
     <table class="table">
         <thead>
@@ -42,5 +43,79 @@
         </tbody>
     </table>
 </div>
-
+{% endif %}
+{% if current_user.haspermission('listmusic') %}
+<h2>Zenék</h2>
+<a href="{{ url_for('uploadfile') }}" class="btn btn-primary" role="button"><i class="bi bi-upload"></i> Zene feltöltése</a>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Fájl</th>
+                <th>Hossz</th>
+                <th>Hangerő</th>
+                <th>Műveletek</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for music in musiclist %}
+            <tr>
+                <td>{{ music[1] }}</td>
+                <td>
+                    {% if music[2] %}
+                    {{ music[2] }} másodperc
+                    {% endif %}
+                </td>
+                <td>
+                    {% if music[3] %}
+                    {{ music[3] * 100 }}%
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('playasset', id=music[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
+                    <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=music[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% if current_user.haspermission('listfiles') %}
+<h2>Egyéb fájlok</h2>
+<a href="{{ url_for('uploadfile') }}" class="btn btn-primary" role="button"><i class="bi bi-upload"></i> Egyéb fájlok feltöltése</a>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Fájl</th>
+                <th>Hossz</th>
+                <th>Hangerő</th>
+                <th>Műveletek</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for file in files %}
+            <tr>
+                <td>{{ file[1] }}</td>
+                <td>
+                    {% if file[2] %}
+                    {{ file[2] }} másodperc
+                    {% endif %}
+                </td>
+                <td>
+                    {% if file[3] %}
+                    {{ file[3] * 100 }}%
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('playasset', id=file[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
+                    <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=file[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
 {% endblock %}

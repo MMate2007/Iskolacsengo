@@ -391,19 +391,40 @@ def addevent(patternid, eventtype):
 def listassets():
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	ringtones = cursor.execute("SELECT id, filepath, length, volume FROM assets WHERE asset_type = 1").fetchall()
+	if current_user.haspermission("listringtones"):
+		ringtones = cursor.execute("SELECT id, filepath, length, volume FROM assets WHERE asset_type = 1").fetchall()
+	else:
+		ringtones = []
+	if current_user.haspermission("listmusic"):
+		musiclist = cursor.execute("SELECT id, filepath, length, volume FROM assets WHERE asset_type = 2").fetchall()
+	else:
+		musiclist = []
+	if current_user.haspermission("listfiles"):
+		files = cursor.execute("SELECT id, filepath, length, volume FROM assets WHERE asset_type = 3").fetchall()
+	else:
+		files = []
 	db.close()
-	return render_template("listassets.html", ringtones=ringtones, previewplaying=pygame.mixer.Channel(3).get_busy())
+	return render_template("listassets.html", ringtones=ringtones, previewplaying=pygame.mixer.Channel(3).get_busy(), musiclist=musiclist, files=files)
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in allowedfiles
 
-@app.route("/uploadringtone", methods=("GET", "POST"))
+@app.route("/uploadfile", methods=("GET", "POST"))
 @login_required
-def uploadringtone():
+def uploadfile():
 	if request.method == "POST":
 		files = request.files.getlist("file")
+		ftype = int(request.form.get("type"))
+		if not current_user.haspermission('uploadringtones') and ftype == 1:
+			flash("Nincs jogosultsága csengőhang feltöltéséhez!", "danger")
+			return redirect(url_for("listassets"))
+		if not current_user.haspermission("uploadmusic") and ftype == 2:
+			flash("Nincs jogosultsága zene feltöltéséhez!", "danger")
+			return redirect(url_for("listassets"))
+		if not current_user.haspermission("uploadfiles") and ftype == 3:
+			flash("Nincs jogosultsága egyéb fájlok feltöltéséhez!", "danger")
+			return redirect(url_for("listassets"))
 		db = sqlite3.connect(settings["programmesDb"])
 		cursor = db.cursor()
 		for file in files:
@@ -414,7 +435,7 @@ def uploadringtone():
 					file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
 					db = sqlite3.connect(settings["programmesDb"])
 					cursor = db.cursor()
-					cursor.execute("INSERT INTO assets (asset_type, filepath, length) VALUES (1,?,?)", (os.path.join(app.config["UPLOAD_FOLDER"], filename), ceil(pygame.mixer.Sound(os.path.join(app.config["UPLOAD_FOLDER"], filename)).get_length())))
+					cursor.execute("INSERT INTO assets (asset_type, filepath, length) VALUES (?,?,?)", (ftype, os.path.join(app.config["UPLOAD_FOLDER"], filename), ceil(pygame.mixer.Sound(os.path.join(app.config["UPLOAD_FOLDER"], filename)).get_length())))
 					db.commit()
 					flash(os.path.join(app.config["UPLOAD_FOLDER"], filename)+" - Fájl sikeresen feltöltve!", "success")
 				else:
@@ -423,14 +444,23 @@ def uploadringtone():
 				flash(os.path.join(app.config["UPLOAD_FOLDER"], filename)+" - Ilyen nevű fájl már létezik!", "danger")
 		db.close()
 		return redirect(url_for("listassets"))
-	return render_template("uploadringtone.html")
+	return render_template("uploadfile.html")
 
 @app.route("/deleteasset/<int:id>")
 @login_required
 def deleteasset(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	result = cursor.execute("SELECT filepath FROM assets WHERE id = ?", (id,)).fetchone()
+	result = cursor.execute("SELECT filepath, asset_type FROM assets WHERE id = ?", (id,)).fetchone()
+	if result[1] == 1 and not current_user.haspermission("deleteringtones"):
+		flash("Nincs jogosultsága csengőhang törléséhez!", "danger")
+		return redirect(url_for("listassets"))
+	if result[1] == 2 and not current_user.haspermission("deletemusic"):
+		flash("Nincs jogosultsága zene törléséhez!", "danger")
+		return redirect(url_for("listassets"))
+	if result[1] == 3 and not current_user.haspermission("deletefiles"):
+		flash("Nincs jogosultsága egyéb fájl törléséhez!", "danger")
+		return redirect(url_for("listassets"))
 	cursor.execute("DELETE FROM assets WHERE id = ?", (id,))
 	db.commit()
 	db.close()
@@ -443,7 +473,16 @@ def deleteasset(id):
 def playasset(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	result = cursor.execute("SELECT filepath FROM assets WHERE id = ?", (id,)).fetchone()
+	result = cursor.execute("SELECT filepath, asset_type FROM assets WHERE id = ?", (id,)).fetchone()
+	if not current_user.haspermission("previewringtones") and result[1] == 1:
+		flash("Nincs jogosultsága csengőhang manuális lejátszásához!", "danger")
+		redirect(url_for("listassets"))
+	if not current_user.haspermission("previewmusic") and result[1] == 2:
+		flash("Nincs jogosultsága zene manuális lejátszásához!", "danger")
+		redirect(url_for("listassets"))
+	if not current_user.haspermission("previewfiles") and result[1] == 3:
+		flash("Nincs jogosultsága egyéb fájl manuális lejátszásához!", "danger")
+		redirect(url_for("listassets"))
 	db.close()
 	pygame.mixer.Channel(3).play(pygame.mixer.Sound(result[0]))
 	return redirect(url_for("listassets"))

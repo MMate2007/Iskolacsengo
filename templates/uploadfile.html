@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}Fájl feltöltése{% endblock %}
+{% block headtitle %}Fájl feltöltése{% endblock %}
+{% block content %}
+
+<form method="post" action="#" enctype=multipart/form-data>
+    <div class="mb-3">
+        <label for="file" class="form-label">Fájl(ok):</label>
+        <input type="file" name="file" id="file" class="form-control" required multiple>
+    </div>
+    <div class="mb-3">
+        <label for="type" class="form-label">Fájl(ok) típusa:</label>
+        <select name="type" id="type" class="form-select">
+            {% if current_user.haspermission('uploadringtones') %}
+            <option value="1">Csengőhang</option>
+            {% endif %}
+            {% if current_user.haspermission('uploadmusic') %}
+            <option value="2">Zene</option>
+            {% endif %}
+            {% if current_user.haspermission('uploadfiles') %}
+            <option value="3">Egyéb fájl</option>
+            {% endif %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Mentés</button>
+</form>
+
+{% endblock %}
