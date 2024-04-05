@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS patterns;
 CREATE TABLE patterns (
 	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-	friendlyname TEXT,
+	friendlyname TEXT UNIQUE,
 	description TEXT
 );
 DROP TABLE IF EXISTS schedule;
@@ -22,7 +22,7 @@ DROP TABLE IF EXISTS assets;
 CREATE TABLE assets (
 	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	asset_type INTEGER NOT NULL,
-	filepath TEXT NOT NULL,
+	filepath TEXT NOT NULL UNIQUE,
 	length INTEGER,
 	volume INTEGER
 );
