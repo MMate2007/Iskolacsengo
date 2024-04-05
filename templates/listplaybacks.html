@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}Csengetési renden kívüli események{% endblock %}
+{% block headtitle %}Csengetési renden kívüli események{% endblock %}
+{% block content %}
+<a href="{{ url_for('addplayback') }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Esemény hozzáadása</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Idő</th>
+            <th>Fájl</th>
+            <th>Műveletek</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for playback in playbacks %}
+        <tr>
+            <td>
+                {{ playback[2] }} {{ playback[3] }}
+            </td>
+            <td>
+                {{ playback[1] }}
+            </td>
+            <td>
+                <a class="btn btn-danger" role="button" href="{{ url_for('deleteplayback', id=playback[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

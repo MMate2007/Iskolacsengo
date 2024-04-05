@@ -24,17 +24,7 @@ CREATE TABLE assets (
 	asset_type INTEGER NOT NULL,
 	filepath TEXT NOT NULL,
 	length INTEGER,
-	volume INTEGER,
-	date DATE
-);
-DROP TABLE IF EXISTS music;
-CREATE TABLE music (
-	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-	file TEXT NOT NULL,
-	length INTEGER NOT NULL,
-	artist TEXT,
-	title TEXT,
-	date DATE
+	volume INTEGER
 );
 DROP TABLE IF EXISTS customsounds;
 CREATE TABLE customsounds (
@@ -43,4 +33,11 @@ CREATE TABLE customsounds (
 	date DATE NOT NULL,
 	schedule_id INTEGER NOT NULL,
 	params TEXT
+);
+DROP TABLE IF EXISTS playbacks;
+CREATE TABLE playbacks (
+	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	asset_id INTEGER NOT NULL,
+	date DATE NOT NULL,
+	time TIME NOT NULL
 );

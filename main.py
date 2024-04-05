@@ -40,6 +40,9 @@ class SoundEvent():
 		if self.type == 1:
 			pygame.mixer.Channel(0).set_volume(self.volume)
 			pygame.mixer.Channel(0).play(pygame.mixer.Sound(self.sound))
+		if self.type == 2:
+			pygame.mixer.Channel(1).set_volume(self.volume)
+			pygame.mixer.Channel(1).play(pygame.mixer.Sound(self.sound))
 
 def readSettings():
 	global settings
@@ -55,9 +58,14 @@ def loadTodaysProgramme():
 	loadcursor = loaddb.cursor()
 	loadcursor.execute("DELETE FROM dates WHERE date < DATE('now', 'localtime')")
 	loadcursor.execute("DELETE FROM customsounds WHERE date < DATE('now', 'localtime')")
+	loadcursor.execute("DELETE FROM playbacks WHERE date < DATE('now', 'localtime')")
 	loaddb.commit()
+	results = loadcursor.execute("SELECT time, filepath, volume FROM playbacks INNER JOIN assets ON playbacks.asset_id = assets.id WHERE date = DATE('now', 'localtime') ORDER BY time").fetchall()
+	for result in results:
+		events.append(SoundEvent(datetime.strptime(result[0], "%H:%M"), result[1], 2, result[2]))
 	result = loadcursor.execute("SELECT pattern_id FROM dates WHERE date = DATE('now', 'localtime')").fetchone()
 	if result is None:
+		loaddb.close()
 		return
 	patternid = result[0]
 	results = loadcursor.execute("SELECT schedule_type, start, end, id, asset_id FROM schedule WHERE pattern_id = ? ORDER BY id", (patternid,)).fetchall()
@@ -457,6 +465,46 @@ def setcustomfile(date):
 		db.close()
 	return render_template("setcustomfile.html", ringtones=ringtones, schedule=schedule, customfiles=customfiles)
 
+@app.route("/listplaybacks")
+@login_required
+def listplaybacks():
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	playbacks = cursor.execute("SELECT playbacks.id, assets.filepath, playbacks.date, playbacks.time FROM playbacks INNER JOIN assets ON playbacks.asset_id = assets.id ORDER BY playbacks.date, playbacks.time").fetchall()
+	db.close()
+	return render_template("listplaybacks.html", playbacks=playbacks)
+
+@app.route("/deleteplayback/<int:id>")
+@login_required
+def deleteplayback(id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	cursor.execute("DELETE FROM playbacks WHERE id = ?", (id, ))
+	db.commit()
+	db.close()
+	flash("Sikeres törlés!", "success")
+	return redirect(url_for("listplaybacks"))
+
+@app.route("/addplayback", methods=("GET", "POST"))
+@login_required
+def addplayback():
+	if request.method == "POST":
+		date = request.form.get("date")
+		time = request.form.get("time")
+		assetid = request.form.get("file")
+		db = sqlite3.connect(settings["programmesDb"])
+		cursor = db.cursor()
+		cursor.execute("INSERT INTO playbacks (asset_id, date, time) VALUES (?, ?, ?)", (assetid, date, time))
+		db.commit()
+		db.close()
+		flash("Sikeres hozzáadás!", "success")
+		return redirect(url_for("listplaybacks"))
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	files = cursor.execute("SELECT id, filepath FROM assets").fetchall()
+	db.close()
+	return render_template("addplayback.html", files=files)
+
 @app.route("/register", methods=("GET", "POST"))
 @login_required
 def register():
@@ -529,6 +577,8 @@ while True:
 			events.remove(event)
 			continue
 		if event.time.hour == datetime.now().hour and event.time.minute == datetime.now().minute:
+			if event.type == 1 and pygame.mixer.Channel(1).get_busy() == True:
+				continue
 			event.play()
 			events.remove(event)
 	sleep(0.2)
