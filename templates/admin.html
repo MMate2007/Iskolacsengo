@@ -4,13 +4,20 @@
 {% block title %}Adminisztráció{% endblock %}
 {% block headtitle %}Adminisztráció{% endblock %}
 {% block content %}
-
+{% if current_user.haspermission('reload') %}
 <a href="{{ url_for('reload') }}" class="btn btn-primary" role="button"><i class="bi bi-arrow-clockwise"></i> Újratöltés</a>
+{% endif %}
+{% if current_user.haspermission('reboot') %}
 <a href="{{ url_for('reboot') }}" class="btn btn-warning" role="button"><i class="bi bi-arrow-clockwise"></i> Újraindítás</a>
+{% endif %}
+{% if current_user.haspermission('shutdown') %}
 <a href="{{ url_for('shutdown') }}" class="btn btn-danger" role="button"><i class="bi bi-toggle-off"></i> Leállítás</a>
+{% endif %}
+{% if current_user.haspermission('disablebell') %}
 {% if bellEnabled %}
 <a href="{{ url_for('changeBellStatus') }}" class="btn btn-danger" role="button"><i class="bi bi-bell-slash"></i> Csengetés letiltása</a>
 {% else %}
 <a href="{{ url_for('changeBellStatus') }}" class="btn btn-success" role="button"><i class="bi bi-bell"></i> Csengetés engedélyezése</a>
+{% endif %}
 {% endif %}
 {% endblock %}

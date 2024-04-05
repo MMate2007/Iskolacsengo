@@ -26,24 +26,36 @@
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     {% if current_user.is_authenticated %}
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        {% if current_user.haspermission("viewdates") %}
                         <li class="nav-item">
                             <a href="{{ url_for('viewdates') }}" class="nav-link">Napok</a>
                         </li>
+                        {% endif %}
+                        {% if current_user.haspermission("listpatterns") %}
                         <li class="nav-item">
                             <a href="{{ url_for('listpatterns') }}" class="nav-link">Csengetési rendek</a>
                         </li>
+                        {% endif %}
+                        {% if current_user.haspermission("listplaybacks") %}
                         <li class="nav-item">
                             <a href="{{ url_for('listplaybacks') }}" class="nav-link">Csengetési renden kívüli bejátszások</a>
                         </li>
+                        {% endif %}
+                        {% if current_user.haspermission("listringtones") or current_user.haspermission("listmusic") or current_user.haspermission("listfiles") %}
                         <li class="nav-item">
                             <a href="{{ url_for('listassets') }}" class="nav-link">Fájlok</a>
                         </li>
+                        {% endif %}
+                        {% if current_user.haspermission("listusers") %}
                         <li class="nav-item">
                             <a href="{{ url_for('listusers') }}" class="nav-link">Felhasználók</a>
                         </li>
+                        {% endif %}
+                        {% if current_user.haspermission("editsettings") %}
                         <li class="nav-item">
                             <a href="{{ url_for('settings') }}" class="nav-link">Beállítások</a>
                         </li>
+                        {% endif %}
                     </ul>
                     {% endif %}
                 </div>

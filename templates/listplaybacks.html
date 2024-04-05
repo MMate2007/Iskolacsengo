@@ -4,7 +4,9 @@
 {% block title %}Csengetési renden kívüli események{% endblock %}
 {% block headtitle %}Csengetési renden kívüli események{% endblock %}
 {% block content %}
+{% if current_user.haspermission("addplaybacks") %}
 <a href="{{ url_for('addplayback') }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Esemény hozzáadása</a>
+{% endif %}
 <div class="table-responsive">
     <table class="table">
         <thead>
@@ -24,7 +26,9 @@
                     {{ playback[1] }}
                 </td>
                 <td>
+                    {% if current_user.haspermission("deleteplaybacks") %}
                     <a class="btn btn-danger" role="button" href="{{ url_for('deleteplayback', id=playback[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}
