@@ -11,6 +11,7 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from werkzeug.utils import secure_filename
 import threading
 from math import ceil
+from functools import wraps
 
 allowedfiles = ["wav", "mp3", "ogg"]
 
@@ -123,6 +124,27 @@ class User():
 	def get_id(self):
 		return str(self.id)
 
+	def haspermission(self, permission):
+		db = sqlite3.connect(settings["usersDb"])
+		cursor = db.cursor()
+		result = cursor.execute("SELECT COUNT(*) FROM userpermissions INNER JOIN permissions ON permission_id = id WHERE friendlyname = ? AND user_id = ?", (permission, self.id)).fetchone()
+		db.close()
+		return result[0]
+
+def permission_required(permission):
+	def decorator(f):
+		@wraps(f)
+		def inner(*args, **kwargs):
+			global loginmanager
+			if current_user.haspermission(permission):
+				pass
+			else:
+				return loginmanager.unauthorized()
+			return f(*args, **kwargs)
+		return inner
+	return decorator
+
+
 @loginmanager.user_loader
 def user_loader(id):	
 	db = sqlite3.connect(settings["usersDb"])
@@ -189,6 +211,7 @@ def changepassword():
 
 @app.route("/reload")
 @login_required
+@permission_required("reload")
 def reload():
 	readSettings()
 	loadTodaysProgramme()
@@ -196,18 +219,21 @@ def reload():
 
 @app.route("/reboot")
 @login_required
+@permission_required("reboot")
 def reboot():
 	os.system("sudo reboot now")
 	return redirect(url_for("admin"))
 
 @app.route("/shutdown")
 @login_required
+@permission_required("shutdown")
 def shutdown():
 	os.system("sudo shutdown now")
 	return redirect(url_for("admin"))
 
 @app.route("/changeBellStatus")
 @login_required
+@permission_required("disablebell")
 def changeBellStatus():
 	global bellEnabled
 	if bellEnabled == True:
@@ -219,6 +245,7 @@ def changeBellStatus():
 
 @app.route("/setpatterns", methods=("GET", "POST"))
 @login_required
+@permission_required("setdates")
 def dates():
 	if request.method == "POST":
 		setptdb = sqlite3.connect(settings["programmesDb"])
@@ -240,6 +267,7 @@ def dates():
 
 @app.route("/viewprogrammes")
 @login_required
+@permission_required("viewdates")
 def viewdates():
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -249,6 +277,7 @@ def viewdates():
 
 @app.route("/deletedate/<date>")
 @login_required
+@permission_required("deletedates")
 def deletedate(date):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -260,6 +289,7 @@ def deletedate(date):
 
 @app.route("/createpattern", methods=("GET", "POST"))
 @login_required
+@permission_required("createpatterns")
 def createpattern():
 	if request.method == "POST":
 		name = request.form.get("name")
@@ -276,6 +306,7 @@ def createpattern():
 
 @app.route("/listpatterns")
 @login_required
+@permission_required("listpatterns")
 def listpatterns():
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -285,6 +316,7 @@ def listpatterns():
 
 @app.route("/deletepattern/<int:id>")
 @login_required
+@permission_required("deletepatterns")
 def deletepattern(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -298,6 +330,7 @@ def deletepattern(id):
 
 @app.route("/<int:id>/viewschedule")
 @login_required
+@permission_required("listschedule")
 def viewschedule(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -308,6 +341,7 @@ def viewschedule(id):
 
 @app.route("/<int:patternid>/deleteevent/<int:id>")
 @login_required
+@permission_required("deletefromschedule")
 def deleteschedule(patternid, id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -319,6 +353,7 @@ def deleteschedule(patternid, id):
 
 @app.route("/<int:patternid>/addevent/<int:eventtype>", methods=("GET", "POST"))
 @login_required
+@permission_required("addtoschedule")
 def addevent(patternid, eventtype):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -421,6 +456,7 @@ def stoppreview():
 
 @app.route("/setcustomfile/<date>", methods=("GET", "POST"))
 @login_required
+@permission_required("setcustomfiles")
 def setcustomfile(date):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -467,6 +503,7 @@ def setcustomfile(date):
 
 @app.route("/listplaybacks")
 @login_required
+@permission_required("listplaybacks")
 def listplaybacks():
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -476,6 +513,7 @@ def listplaybacks():
 
 @app.route("/deleteplayback/<int:id>")
 @login_required
+@permission_required("deleteplaybacks")
 def deleteplayback(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -487,6 +525,7 @@ def deleteplayback(id):
 
 @app.route("/addplayback", methods=("GET", "POST"))
 @login_required
+@permission_required("addplaybacks")
 def addplayback():
 	if request.method == "POST":
 		date = request.form.get("date")
@@ -507,7 +546,12 @@ def addplayback():
 
 @app.route("/register", methods=("GET", "POST"))
 @login_required
+@permission_required("createusers")
 def register():
+	db = sqlite3.connect(settings["usersDb"])
+	cursor = db.cursor()
+	permissions = cursor.execute("SELECT id, humanname FROM permissions INNER JOIN userpermissions ON id = permission_id WHERE user_id = ? ORDER BY humanname", (current_user.id, )).fetchall()
+	db.close()
 	if request.method == "POST":
 		name = request.form.get("name")
 		password = request.form.get("password")
@@ -519,15 +563,45 @@ def register():
 			cursor = db.cursor()
 			cursor.execute("INSERT INTO users (username, password) VALUES (?,?)", (name,encryptedpassword))
 			db.commit()
+			userid = cursor.execute("SELECT id FROM users WHERE username = ?", (name, )).fetchone()
+			for permission in permissions:
+				if request.form.get("permission"+str(permission[0])) == '1':
+					cursor.execute("INSERT INTO userpermissions (user_id, permission_id) VALUES (?, ?)", (userid[0], permission[0]))
+			db.commit()
 			flash("Felhasználó sikeresen létrehozva!", "success")
 			db.close()
 			return redirect(url_for("listusers"))
 		else:
 			flash("A két jelszó nem egyezik!", "danger")
-	return render_template("register.html")
+	return render_template("register.html", permissions=permissions)
+
+@app.route("/editpermissions/<int:id>", methods=("GET", "POST"))
+@login_required
+@permission_required("editpermissions")
+def editpermissions(id):
+	db = sqlite3.connect(settings["usersDb"])
+	cursor = db.cursor()
+	username = cursor.execute("SELECT username FROM users WHERE id = ?", (id, )).fetchone()
+	permissions = cursor.execute("SELECT id, humanname FROM permissions INNER JOIN userpermissions ON id = permission_id WHERE user_id = ? ORDER BY humanname", (current_user.id, )).fetchall()
+	userpermissions = cursor.execute("SELECT permission_id FROM userpermissions WHERE user_id = ?", (id, )).fetchall()
+	if request.method == "POST":
+		for permission in permissions:
+			if request.form.get("permission"+str(permission[0])) == '1':
+				result = cursor.execute("SELECT COUNT(*) FROM userpermissions WHERE user_id = ? AND permission_id = ?", (id, permission[0])).fetchone()
+				if result[0] == 0:
+					cursor.execute("INSERT INTO userpermissions (user_id, permission_id) VALUES (?, ?)", (id, permission[0]))
+			elif request.form.get("permission"+str(permission[0])) == '0':
+				cursor.execute("DELETE FROM userpermissions WHERE user_id = ? AND permission_id = ?", (id, permission[0]))
+		db.commit()
+		flash("Sikeres módosítás!", "success")
+		db.close()
+		return redirect(url_for("listusers"))
+	db.close()
+	return render_template("editpermissions.html", permissions=permissions, userpermissions=userpermissions, username=username[0])
 
 @app.route("/listusers")
 @login_required
+@permission_required("listusers")
 def listusers():
 	db = sqlite3.connect(settings["usersDb"])
 	cursor = db.cursor()
@@ -537,10 +611,12 @@ def listusers():
 
 @app.route("/deleteuser/<int:id>")
 @login_required
+@permission_required("deleteusers")
 def deleteuser(id):
 	db = sqlite3.connect(settings["usersDb"])
 	cursor = db.cursor()
 	cursor.execute("DELETE FROM users WHERE id = ?", (id,))
+	cursor.execute("DELETE FROM userpermissions WHERE user_id = ?", (id, ))
 	db.commit()
 	flash("Felhasználó sikeresen törölve!", "success")
 	db.close()
@@ -548,6 +624,7 @@ def deleteuser(id):
 
 @app.route("/settings", methods=("GET", "POST"))
 @login_required
+@permission_required("editsettings")
 def settings():
 	if request.method == "POST":
 		for setting in list(settings.keys()):
