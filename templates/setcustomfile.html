@@ -5,55 +5,87 @@
 {% block headtitle %}Egyedi hangfájl beállítása{% endblock %}
 {% block content %}
 <form action="#" method="POST">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Típus</th>
-                <th>Idő</th>
-                <th>Hangfájlok</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for event in schedule %}
-            <tr>
-                <td>
-                    {% if event[1] == 1 %}
-                        tanóra
-                    {% elif event[1] == 2 %}
-                        csengetés
-                    {% endif %}
-                </td>
-                <td>
-                    {{ event[2] }}
-                    {% if event[3] != None %}
-                         - {{ event[3] }}
-                    {% endif %}
-                </td>
-                <td>
-                    {% if event[1] == 1 %}
-                        <label for="{{ event[0] }}start">Becsengetés:</label>
-                        <select name="{{ event[0] }}start" id="{{ event[0] }}start" class="form-select" required>
-                            <option value="null">Alapértelmezett</option>
-                            {% for ringtone in ringtones %}
-                                {% if ringtone[2] == 1 %}
-                                <option value="{{ ringtone[0] }}"
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Típus</th>
+                    <th>Idő</th>
+                    <th>Hangfájlok</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in schedule %}
+                <tr>
+                    <td>
+                        {% if event[1] == 1 %}
+                            tanóra
+                        {% elif event[1] == 2 %}
+                            csengetés
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ event[2] }}
+                        {% if event[3] != None %}
+                             - {{ event[3] }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if event[1] == 1 %}
+                            <label for="{{ event[0] }}start">Becsengetés:</label>
+                            <select name="{{ event[0] }}start" id="{{ event[0] }}start" class="form-select" required>
+                                <option value="null">Alapértelmezett</option>
+                                {% for ringtone in ringtones %}
+                                    {% if ringtone[2] == 1 %}
+                                    <option value="{{ ringtone[0] }}"
+                                        {% for file in customfiles %}
+                                        {% if file[2] == event[0] and file[3] == '1' and file[1] == ringtone[0] %}
+                                        selected
+                                        {% endif %}
+                                        {% endfor %}
+                                    >{{ ringtone[1] }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <label for="{{ event[0] }}reminder">Jelzőcsengetés:</label>
+                            <select name="{{ event[0] }}reminder" id="{{ event[0] }}reminder" class="form-select" required>
+                                <option value="null">Alapértelmezett</option>
+                                {% for ringtone in ringtones %}
+                                    {% if ringtone[2] == 1 %}
+                                    <option value="{{ ringtone[0] }}"
                                     {% for file in customfiles %}
-                                    {% if file[2] == event[0] and file[3] == '1' and file[1] == ringtone[0] %}
+                                    {% if file[2] == event[0] and file[3] == '2' and file[1] == ringtone[0] %}
                                     selected
                                     {% endif %}
                                     {% endfor %}
-                                >{{ ringtone[1] }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                        <label for="{{ event[0] }}reminder">Jelzőcsengetés:</label>
-                        <select name="{{ event[0] }}reminder" id="{{ event[0] }}reminder" class="form-select" required>
+                                    >{{ ringtone[1] }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <label for="{{ event[0] }}end">Kicsengetés:</label>
+                            <select name="{{ event[0] }}end" id="{{ event[0] }}end" class="form-select" required>
+                                <option value="null">Alapértelmezett</option>
+                                {% for ringtone in ringtones %}
+                                    {% if ringtone[2] == 1 %}
+                                    <option value="{{ ringtone[0] }}"
+                                    {% for file in customfiles %}
+                                    {% if file[2] == event[0] and file[3] == '3' and file[1] == ringtone[0] %}
+                                    selected
+                                    {% endif %}
+                                    {% endfor %}
+                                    >{{ ringtone[1] }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        {% elif event[1] == 2 %}
+                        <label for="{{ event[0] }}">Csengőhang:</label>
+                        <select name="{{ event[0] }}" id="{{ event[0] }}" class="form-select" required>
                             <option value="null">Alapértelmezett</option>
                             {% for ringtone in ringtones %}
                                 {% if ringtone[2] == 1 %}
                                 <option value="{{ ringtone[0] }}"
                                 {% for file in customfiles %}
-                                {% if file[2] == event[0] and file[3] == '2' and file[1] == ringtone[0] %}
+                                {% if file[2] == event[0] and file[1] == ringtone[0] %}
                                 selected
                                 {% endif %}
                                 {% endfor %}
@@ -61,43 +93,13 @@
                                 {% endif %}
                             {% endfor %}
                         </select>
-                        <label for="{{ event[0] }}end">Kicsengetés:</label>
-                        <select name="{{ event[0] }}end" id="{{ event[0] }}end" class="form-select" required>
-                            <option value="null">Alapértelmezett</option>
-                            {% for ringtone in ringtones %}
-                                {% if ringtone[2] == 1 %}
-                                <option value="{{ ringtone[0] }}"
-                                {% for file in customfiles %}
-                                {% if file[2] == event[0] and file[3] == '3' and file[1] == ringtone[0] %}
-                                selected
-                                {% endif %}
-                                {% endfor %}
-                                >{{ ringtone[1] }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                    {% elif event[1] == 2 %}
-                    <label for="{{ event[0] }}">Csengőhang:</label>
-                    <select name="{{ event[0] }}" id="{{ event[0] }}" class="form-select" required>
-                        <option value="null">Alapértelmezett</option>
-                        {% for ringtone in ringtones %}
-                            {% if ringtone[2] == 1 %}
-                            <option value="{{ ringtone[0] }}"
-                            {% for file in customfiles %}
-                            {% if file[2] == event[0] and file[1] == ringtone[0] %}
-                            selected
-                            {% endif %}
-                            {% endfor %}
-                            >{{ ringtone[1] }}</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Mentés</button>
 </form>
 

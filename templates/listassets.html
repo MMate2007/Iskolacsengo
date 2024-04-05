@@ -9,36 +9,38 @@
 {% if previewplaying %}
 <a href="{{ url_for('stoppreview') }}" class="btn btn-danger" role="button"><i class="bi bi-stop-fill"></i> Lejátszás leállítása</a>
 {% endif %}
-<table class="table">
-    <thead>
-        <tr>
-            <th>Fájl</th>
-            <th>Hossz</th>
-            <th>Hangerő</th>
-            <th>Műveletek</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for ringtone in ringtones %}
-        <tr>
-            <td>{{ ringtone[1] }}</td>
-            <td>
-                {% if ringtone[2] %}
-                {{ ringtone[2] }} másodperc
-                {% endif %}
-            </td>
-            <td>
-                {% if ringtone[3] %}
-                {{ ringtone[3] * 100 }}%
-                {% endif %}
-            </td>
-            <td>
-                <a href="{{ url_for('playasset', id=ringtone[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
-                <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=ringtone[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Fájl</th>
+                <th>Hossz</th>
+                <th>Hangerő</th>
+                <th>Műveletek</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ringtone in ringtones %}
+            <tr>
+                <td>{{ ringtone[1] }}</td>
+                <td>
+                    {% if ringtone[2] %}
+                    {{ ringtone[2] }} másodperc
+                    {% endif %}
+                </td>
+                <td>
+                    {% if ringtone[3] %}
+                    {{ ringtone[3] * 100 }}%
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('playasset', id=ringtone[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
+                    <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=ringtone[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
 {% endblock %}

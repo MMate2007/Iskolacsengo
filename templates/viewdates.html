@@ -5,26 +5,28 @@
 {% block headtitle %}Napok{% endblock %}
 {% block content %}
 <a href="{{ url_for('dates') }}" class="btn btn-primary" role="button"><i class="bi bi-calendar-plus"></i> Új nap beállítása</a>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Nap</th>
-            <th>Csengetési rend</th>
-            <th>Műveletek</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for date in dates %}
-        <tr>
-            <td>{{ date[0] }}</td>
-            <td>{{ date[1] }}</td>
-            <td>
-                <a href="{{ url_for('setcustomfile', date=date[0]) }}" class="btn btn-outline-primary"><i class="bi bi-volume-up-fill"></i> Egyedi hangok beállítása</a>
-                <a class="btn btn-danger" role="button" href="{{ url_for('deletedate', date=date[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nap</th>
+                <th>Csengetési rend</th>
+                <th>Műveletek</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for date in dates %}
+            <tr>
+                <td>{{ date[0] }}</td>
+                <td>{{ date[1] }}</td>
+                <td>
+                    <a href="{{ url_for('setcustomfile', date=date[0]) }}" class="btn btn-outline-primary"><i class="bi bi-volume-up-fill"></i> Egyedi hangok beállítása</a>
+                    <a class="btn btn-danger" role="button" href="{{ url_for('deletedate', date=date[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
 {% endblock %}
