@@ -13,13 +13,13 @@
     <div class="mb-3">
         <label for="type" class="form-label">Fájl(ok) típusa:</label>
         <select name="type" id="type" class="form-select">
-            {% if current_user.haspermission('uploadringtones') %}
+            {% if current_user.haspermission('ringtones') %}
             <option value="1">Csengőhang</option>
             {% endif %}
-            {% if current_user.haspermission('uploadmusic') %}
+            {% if current_user.haspermission('music') %}
             <option value="2">Zene</option>
             {% endif %}
-            {% if current_user.haspermission('uploadfiles') %}
+            {% if current_user.haspermission('files') %}
             <option value="3">Egyéb fájl</option>
             {% endif %}
         </select>

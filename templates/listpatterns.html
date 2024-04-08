@@ -4,9 +4,7 @@
 {% block title %}Csengetési rendek{% endblock %}
 {% block headtitle %}Csengetési rendek{% endblock %}
 {% block content %}
-{% if current_user.haspermission("createpatterns") %}
 <a href="{{ url_for('createpattern') }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Csengetési rend létrehozása</a>
-{% endif %}
 <div class="table-responsive">
     <table class="table">
         <thead>
@@ -22,12 +20,8 @@
                 <td>{{ pattern[1] }}</td>
                 <td>{{ pattern[2] }}</td>
                 <td>
-                    {% if current_user.haspermission("listschedule") %}
                     <a href="{{ url_for('viewschedule', id=pattern[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-pencil"></i> Szerkesztés</a>
-                    {% endif %}
-                    {% if current_user.haspermission("deletepatterns") %}
                     <a class="btn btn-danger" role="button" href="{{ url_for('deletepattern', id=pattern[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
-                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

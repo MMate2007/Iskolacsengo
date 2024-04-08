@@ -267,7 +267,6 @@ def dates():
 
 @app.route("/viewprogrammes")
 @login_required
-@permission_required("viewdates")
 def viewdates():
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -277,7 +276,7 @@ def viewdates():
 
 @app.route("/deletedate/<date>")
 @login_required
-@permission_required("deletedates")
+@permission_required("setdates")
 def deletedate(date):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -289,7 +288,7 @@ def deletedate(date):
 
 @app.route("/createpattern", methods=("GET", "POST"))
 @login_required
-@permission_required("createpatterns")
+@permission_required("patterns")
 def createpattern():
 	if request.method == "POST":
 		name = request.form.get("name")
@@ -306,7 +305,7 @@ def createpattern():
 
 @app.route("/listpatterns")
 @login_required
-@permission_required("listpatterns")
+@permission_required("patterns")
 def listpatterns():
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -316,7 +315,7 @@ def listpatterns():
 
 @app.route("/deletepattern/<int:id>")
 @login_required
-@permission_required("deletepatterns")
+@permission_required("patterns")
 def deletepattern(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -330,7 +329,7 @@ def deletepattern(id):
 
 @app.route("/<int:id>/viewschedule")
 @login_required
-@permission_required("listschedule")
+@permission_required("patterns")
 def viewschedule(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -341,7 +340,7 @@ def viewschedule(id):
 
 @app.route("/<int:patternid>/deleteevent/<int:id>")
 @login_required
-@permission_required("deletefromschedule")
+@permission_required("patterns")
 def deleteschedule(patternid, id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -353,7 +352,7 @@ def deleteschedule(patternid, id):
 
 @app.route("/<int:patternid>/addevent/<int:eventtype>", methods=("GET", "POST"))
 @login_required
-@permission_required("addtoschedule")
+@permission_required("patterns")
 def addevent(patternid, eventtype):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -391,15 +390,15 @@ def addevent(patternid, eventtype):
 def listassets():
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	if current_user.haspermission("listringtones"):
+	if current_user.haspermission("ringtones"):
 		ringtones = cursor.execute("SELECT id, filepath, length, volume FROM assets WHERE asset_type = 1").fetchall()
 	else:
 		ringtones = []
-	if current_user.haspermission("listmusic"):
+	if current_user.haspermission("music"):
 		musiclist = cursor.execute("SELECT id, filepath, length, volume FROM assets WHERE asset_type = 2").fetchall()
 	else:
 		musiclist = []
-	if current_user.haspermission("listfiles"):
+	if current_user.haspermission("files"):
 		files = cursor.execute("SELECT id, filepath, length, volume FROM assets WHERE asset_type = 3").fetchall()
 	else:
 		files = []
@@ -416,13 +415,13 @@ def uploadfile():
 	if request.method == "POST":
 		files = request.files.getlist("file")
 		ftype = int(request.form.get("type"))
-		if not current_user.haspermission('uploadringtones') and ftype == 1:
+		if not current_user.haspermission('ringtones') and ftype == 1:
 			flash("Nincs jogosultsága csengőhang feltöltéséhez!", "danger")
 			return redirect(url_for("listassets"))
-		if not current_user.haspermission("uploadmusic") and ftype == 2:
+		if not current_user.haspermission("music") and ftype == 2:
 			flash("Nincs jogosultsága zene feltöltéséhez!", "danger")
 			return redirect(url_for("listassets"))
-		if not current_user.haspermission("uploadfiles") and ftype == 3:
+		if not current_user.haspermission("files") and ftype == 3:
 			flash("Nincs jogosultsága egyéb fájlok feltöltéséhez!", "danger")
 			return redirect(url_for("listassets"))
 		db = sqlite3.connect(settings["programmesDb"])
@@ -452,13 +451,13 @@ def deleteasset(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
 	result = cursor.execute("SELECT filepath, asset_type FROM assets WHERE id = ?", (id,)).fetchone()
-	if result[1] == 1 and not current_user.haspermission("deleteringtones"):
+	if result[1] == 1 and not current_user.haspermission("ringtones"):
 		flash("Nincs jogosultsága csengőhang törléséhez!", "danger")
 		return redirect(url_for("listassets"))
-	if result[1] == 2 and not current_user.haspermission("deletemusic"):
+	if result[1] == 2 and not current_user.haspermission("music"):
 		flash("Nincs jogosultsága zene törléséhez!", "danger")
 		return redirect(url_for("listassets"))
-	if result[1] == 3 and not current_user.haspermission("deletefiles"):
+	if result[1] == 3 and not current_user.haspermission("files"):
 		flash("Nincs jogosultsága egyéb fájl törléséhez!", "danger")
 		return redirect(url_for("listassets"))
 	cursor.execute("DELETE FROM assets WHERE id = ?", (id,))
@@ -470,17 +469,18 @@ def deleteasset(id):
 
 @app.route("/playasset/<int:id>")
 @login_required
+@permission_required("previewfiles")
 def playasset(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
 	result = cursor.execute("SELECT filepath, asset_type FROM assets WHERE id = ?", (id,)).fetchone()
-	if not current_user.haspermission("previewringtones") and result[1] == 1:
+	if not current_user.haspermission("ringtones") and result[1] == 1:
 		flash("Nincs jogosultsága csengőhang manuális lejátszásához!", "danger")
 		redirect(url_for("listassets"))
-	if not current_user.haspermission("previewmusic") and result[1] == 2:
+	if not current_user.haspermission("music") and result[1] == 2:
 		flash("Nincs jogosultsága zene manuális lejátszásához!", "danger")
 		redirect(url_for("listassets"))
-	if not current_user.haspermission("previewfiles") and result[1] == 3:
+	if not current_user.haspermission("files") and result[1] == 3:
 		flash("Nincs jogosultsága egyéb fájl manuális lejátszásához!", "danger")
 		redirect(url_for("listassets"))
 	db.close()
@@ -489,6 +489,7 @@ def playasset(id):
 
 @app.route("/stoppreview")
 @login_required
+@permission_required("previewfiles")
 def stoppreview():
 	pygame.mixer.Channel(3).stop()
 	return redirect(url_for("listassets"))
@@ -542,7 +543,7 @@ def setcustomfile(date):
 
 @app.route("/listplaybacks")
 @login_required
-@permission_required("listplaybacks")
+@permission_required("playbacks")
 def listplaybacks():
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -552,7 +553,7 @@ def listplaybacks():
 
 @app.route("/deleteplayback/<int:id>")
 @login_required
-@permission_required("deleteplaybacks")
+@permission_required("playbacks")
 def deleteplayback(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
@@ -564,7 +565,7 @@ def deleteplayback(id):
 
 @app.route("/addplayback", methods=("GET", "POST"))
 @login_required
-@permission_required("addplaybacks")
+@permission_required("playbacks")
 def addplayback():
 	if request.method == "POST":
 		date = request.form.get("date")

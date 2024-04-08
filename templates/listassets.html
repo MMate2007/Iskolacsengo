@@ -7,11 +7,9 @@
 {% if previewplaying %}
 <a href="{{ url_for('stoppreview') }}" class="btn btn-danger" role="button"><i class="bi bi-stop-fill"></i> Lejátszás leállítása</a>
 {% endif %}
-{% if current_user.haspermission('listringtones') %}
+{% if current_user.haspermission('ringtones') %}
 <h2>Csengőhangok</h2>
-{% if current_user.haspermission("uploadringtones") %}
 <a href="{{ url_for('uploadfile') }}" class="btn btn-primary" role="button"><i class="bi bi-upload"></i> Csengőhang feltöltése</a>
-{% endif %}
 <div class="table-responsive">
     <table class="table">
         <thead>
@@ -37,12 +35,10 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if current_user.haspermission("previewringtones") %}
+                    {% if current_user.haspermission("previewfiles") %}
                     <a href="{{ url_for('playasset', id=ringtone[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
                     {% endif %}
-                    {% if current_user.haspermission("deleteringtones") %}
                     <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=ringtone[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
-                    {% endif %}
                 </td>
             </tr>
             {% endfor %}
@@ -50,11 +46,9 @@
     </table>
 </div>
 {% endif %}
-{% if current_user.haspermission('listmusic') %}
+{% if current_user.haspermission('music') %}
 <h2>Zenék</h2>
-{% if current_user.haspermission("uploadmusic") %}
 <a href="{{ url_for('uploadfile') }}" class="btn btn-primary" role="button"><i class="bi bi-upload"></i> Zene feltöltése</a>
-{% endif %}
 <div class="table-responsive">
     <table class="table">
         <thead>
@@ -80,12 +74,10 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if current_user.haspermission("previewmusic") %}
+                    {% if current_user.haspermission("previewfiles") %}
                     <a href="{{ url_for('playasset', id=music[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
                     {% endif %}
-                    {% if current_user.haspermission("deletemusic") %}
                     <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=music[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
-                    {% endif %}
                 </td>
             </tr>
             {% endfor %}
@@ -93,11 +85,9 @@
     </table>
 </div>
 {% endif %}
-{% if current_user.haspermission('listfiles') %}
+{% if current_user.haspermission('files') %}
 <h2>Egyéb fájlok</h2>
-{% if current_user.haspermission("uploadfiles") %}
 <a href="{{ url_for('uploadfile') }}" class="btn btn-primary" role="button"><i class="bi bi-upload"></i> Egyéb fájlok feltöltése</a>
-{% endif %}
 <div class="table-responsive">
     <table class="table">
         <thead>
@@ -126,9 +116,7 @@
                     {% if current_user.haspermission("previewfiles") %}
                     <a href="{{ url_for('playasset', id=file[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
                     {% endif %}
-                    {% if current_user.haspermission("deletefiles") %}
                     <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=file[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
-                    {% endif %}
                 </td>
             </tr>
             {% endfor %}
