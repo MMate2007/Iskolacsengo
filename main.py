@@ -670,10 +670,11 @@ def deleteuser(id):
 def settings():
 	if request.method == "POST":
 		for setting in list(settings.keys()):
-			if request.form.get(setting).isdigit():
-				settings[setting] = int(request.form.get(setting))
-			else:
-				settings[setting] = request.form.get(setting)
+			if request.form.get(setting) is not None:
+				if request.form.get(setting).isdigit():
+					settings[setting] = int(request.form.get(setting))
+				else:
+					settings[setting] = request.form.get(setting)
 		with open("settings.json", "w") as f:
 			json.dump(settings, f)
 		flash("Sikeres módosítás!", "success")
