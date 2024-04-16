@@ -15,6 +15,39 @@
         <input type="date" name="end" id="end" class="form-control" required>
     </div>
     <div class="mb-3">
+        <label for="days" class="form-label">Napok:</label>
+        <div id="days">
+            <div class="form-check form-check-inline">
+                <input type="checkbox" name="days[]" id="day0" value="0" class="form-check-input" checked>
+                <label for="day0" class="form-check-label">Hétfő</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input type="checkbox" name="days[]" id="day1" value="1" class="form-check-input" checked>
+                <label for="day1" class="form-check-label">Kedd</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input type="checkbox" name="days[]" id="day2" value="2" class="form-check-input" checked>
+                <label for="day2" class="form-check-label">Szerda</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input type="checkbox" name="days[]" id="day3" value="3" class="form-check-input" checked>
+                <label for="day3" class="form-check-label">Csütörtök</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input type="checkbox" name="days[]" id="day4" value="4" class="form-check-input" checked>
+                <label for="day4" class="form-check-label">Péntek</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input type="checkbox" name="days[]" id="day5" value="5" class="form-check-input">
+                <label for="day5" class="form-check-label">Szombat</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input type="checkbox" name="days[]" id="day6" value="6" class="form-check-input">
+                <label for="day6" class="form-check-label">Vasárnap</label>
+            </div>
+        </div>
+    </div>
+    <div class="mb-3">
         <label for="pattern">Csengetési rend:</label>
         <select name="pattern" id="pattern" class="form-select" required>
             {% for pattern in patterns %}
