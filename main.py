@@ -298,8 +298,13 @@ def createpattern():
 		description = request.form.get("description")
 		db = sqlite3.connect(settings["programmesDb"])
 		cursor = db.cursor()
-		cursor.execute("INSERT INTO patterns (friendlyname, description) VALUES (?,?)", (name,description))
-		db.commit()
+		try:
+			cursor.execute("INSERT INTO patterns (friendlyname, description) VALUES (?,?)", (name,description))
+			db.commit()
+		except sqlite3.IntegrityError:
+			flash("Már létezik egy "+name+" nevű csengetési rend!", "danger")
+			db.close()
+			return redirect(url_for("createpattern"))
 		flash("Csengetési rend sikeresen létrehozva!", "success")
 		result = cursor.execute("SELECT id FROM patterns WHERE friendlyname = ?", (name,)).fetchone()
 		db.close()
