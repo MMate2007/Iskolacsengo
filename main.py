@@ -256,7 +256,7 @@ def dates():
 		current = start
 		while (current <= end):
 			if current.weekday() in days:
-				setptcursor.execute("INSERT INTO dates (date, pattern_id) VALUES (?, ?)", (current.strftime("%Y-%m-%d"), request.form.get("pattern")))
+				setptcursor.execute("INSERT OR REPLACE INTO dates (date, pattern_id) VALUES (?, ?)", (current.strftime("%Y-%m-%d"), request.form.get("pattern")))
 			current += timedelta(days=1)
 		setptdb.commit()
 		flash("Csengetési rend sikeresen beállítva a megadott napokra!", "success")
