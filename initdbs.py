@@ -32,7 +32,6 @@ permissions = [["reload", "Programok újratöltése"],
 				["listusers", "Felhasználók megtekintése"],
 				["createusers", "Felhasználó létrehozása"],
 				["deleteusers", "Felhasználó törlése"],
-				["modifypasswords", "Más felhasználók jelszavának módosítása"],
 				["editpermissions", "Jogosultságok szerkesztése"],
 				["editsettings", "Beállítások módosítása"]
 				]

@@ -20,7 +20,7 @@
             <tr>
                 <td>{{ user[1] }}</td>
                 <td>
-                    {% if current_user.id|int == user[0] or current_user.haspermission('modifypasswords') %}
+                    {% if current_user.id|int == user[0] %}
                     <a href="{{ url_for('changepassword') }}" class="btn btn-warning" role="button"><i class="bi bi-key"></i> Jelszóváltoztatás</a>
                     {% endif %}
                     {% if current_user.haspermission('editpermissions') %}
