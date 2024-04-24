@@ -7,7 +7,8 @@ cd /etc/systemd/system
 cat > iskolacsengo.service << END
 [Unit]
 Description=Iskolacsengo
-After=network.target
+Wants=sound.target
+After=network.target sound.target
 
 [Service]
 WorkingDirectory=$dir
