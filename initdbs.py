@@ -1,9 +1,16 @@
 import sqlite3
 import json
 import bcrypt
-
+from os import makedirs, path, getcwd
+from json import dump
 with open("settings.json") as s:
 	settings = json.load(s)
+if settings["uploadFolder"] is None:
+	settings["uploadFolder"] = getcwd()+"/assets"
+	with open("settings.json", "w") as f:
+		json.dump(settings, f)
+if not path.isdir(settings["uploadFolder"]):
+	makedirs(settings["uploadFolder"])
 
 programmesdb = sqlite3.connect(settings["programmesDb"])
 programmescursor = programmesdb.cursor()
