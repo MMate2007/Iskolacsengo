@@ -12,6 +12,8 @@ After=network.target sound.target
 
 [Service]
 WorkingDirectory=$dir
+User=$SUDO_USER
+Environment=XDG_RUNTIME_DIR=/run/user/1000
 ExecStart=python $dir/main.py
 Restart=on-failure
 RestartSec=30
@@ -19,11 +21,11 @@ RestartSec=30
 [Install]
 WantedBy=default.target
 END
-cd /etc
-cat >> asound.conf << END
-defaults.pcm.card 2
-defaults.ctl.card 2
-END
+# cd /etc
+# cat >> asound.conf << END
+# defaults.pcm.card 2
+# defaults.ctl.card 2
+# END
 systemctl daemon-reload
 systemctl enable iskolacsengo.service
 systemctl start iskolacsengo.service
