@@ -3,6 +3,7 @@
 apt install python3 python3-bcrypt python3-flask python3-flask-login python3-pygame -y
 dir=$PWD
 python initdbs.py
+chown -R $SUDO_USER: assets
 cd /etc/systemd/system
 cat > iskolacsengo.service << END
 [Unit]
