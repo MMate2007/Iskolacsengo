@@ -21,11 +21,6 @@ RestartSec=30
 [Install]
 WantedBy=default.target
 END
-# cd /etc
-# cat >> asound.conf << END
-# defaults.pcm.card 2
-# defaults.ctl.card 2
-# END
 systemctl daemon-reload
 systemctl enable iskolacsengo.service
 systemctl start iskolacsengo.service
