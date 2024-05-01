@@ -17,6 +17,7 @@ Environment=XDG_RUNTIME_DIR=/run/user/1000
 ExecStart=python $dir/main.py
 Restart=on-failure
 RestartSec=30
+KillSignal=SIGINT
 
 [Install]
 WantedBy=default.target
