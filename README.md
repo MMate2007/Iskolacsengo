@@ -12,15 +12,13 @@ A Raspberry Pi controlled school bell system. - Egy iskolai csengővezérlő Ras
 - egyedi csengetési hangok beállítása adott napra
 - csengetés szüneteltetése
 - fájlok manuális lejátszása
+- hiba esetén automatikus újraindulás
 
 ## Telepítés
 Előfeltételek:
   - Python legalább 3-as verziója
 
 1. Klónozzuk ezt a repository-t!
-2. Készítsünk másolatot az *example.programmes.json* fájlból, s mentsük el tetszőleges néven! Ebből a fájlból annyi másolatot készítsünk, ahány csengetési rendet szeretnénk tárolni.
-3. Szerkesszük ezt a fájlt a minta szerint! Fontos, hogy minden sor **kivéve az utolsó sor** (az adott zárójelen belül) végére kell vesszőt tenni!
-4. A *settings.json* fájlt megnyitva adjuk meg az imént létrehozott fájl elérési útját (ha többet hoztunk létre, akkor azét adjuk meg, amelyet szeretnénk, hogy a program kövessen)! Ha egy nap másik csengetési rendet szeretnénk alkalmazni, akkor a program futtatása előtt módosítsuk a *settings.json* fájlt!
-5. Adjuk ki a mappában a `pip install -r requirements.txt` parancsot! Ez telepíti a szükséges könyvtárakat.
-6. Ha készen állunk, akkor elindíthatjuk a programot a `python main.py` parancs kiadásával.
-7. Ha le szeretnénk állítani, akkor nyomjuk le a *Ctrl + C* billentyűket.
+2. Nyissuk meg a mappát a terminálban és adjuk ki a `sudo ./install.sh` parancsot! Ehhez előfordulhat, hogy meg kell adni a Raspberry Pi OS telepítésekor megadott jelszavunkat.
+3. Ezután ha minden sikerült már fut is a program, melyet az 5000-es porton érhetünk el (ezt elérhetjük más eszközről is, ehhez írjuk be a böngészőbe a Raspberry Pi IP címét, vagy a korábban beállított hostname-et és a végére írjuk oda: *:5000*. Meg is nézhetjük a program státuszát ha terminálba begépeljük a következőt: `sudo systemctl status iskolacsengo.service`.
+4. A program leállításhoz adjuk ki a `sudo systemctl stop iskolacsengo.service` parancsot!
