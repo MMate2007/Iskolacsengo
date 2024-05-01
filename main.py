@@ -19,7 +19,7 @@ app = Flask(__name__)
 app.secret_key = "valami"
 loginmanager = LoginManager()
 loginmanager.init_app(app)
-pygame.mixer.init(buffer=2048)
+pygame.mixer.init(buffer=2048, channels=4)
 with open("settings.json") as f:
 		settings = json.load(f)
 app.config["UPLOAD_FOLDER"] = settings["uploadFolder"]
