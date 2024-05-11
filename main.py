@@ -78,12 +78,13 @@ def loadTodaysProgramme():
 			else:
 				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
 			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1, assetresult[1]))
-			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 2", (result[3], )).fetchone()
-			if customfileresult is None:
-				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classEndReminderAssetId"],)).fetchone()
-			else:
-				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], 1, assetresult[1]))
+			if settings["classEndReminderMin"] != 0:
+				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 2", (result[3], )).fetchone()
+				if customfileresult is None:
+					assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classEndReminderAssetId"],)).fetchone()
+				else:
+					assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
+				events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], 1, assetresult[1]))
 			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 3", (result[3], )).fetchone()
 			if customfileresult is None:
 				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classEndAssetId"],)).fetchone()
