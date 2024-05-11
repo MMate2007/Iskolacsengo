@@ -1,6 +1,6 @@
 #!/bin/sh
 
-apt install python3 python3-bcrypt python3-flask python3-flask-login python3-pygame -y
+apt install python3 python3-bcrypt python3-flask python3-flask-login python3-pygame python3-alsaaudio -y
 dir=$PWD
 python initdbs.py
 chown -R $SUDO_USER: assets
