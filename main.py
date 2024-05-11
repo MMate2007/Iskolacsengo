@@ -694,7 +694,7 @@ def settings():
 readSettings()
 loadTodaysProgramme()
 thread = threading.Thread(target=lambda: app.run(debug=True, host="0.0.0.0", use_reloader=False))
-thread.setDaemon(True)
+thread.daemon = True
 thread.start()
 while True:
 	if lastloaded != datetime.now().day:
