@@ -20,4 +20,10 @@
 <a href="{{ url_for('changeBellStatus') }}" class="btn btn-success" role="button"><i class="bi bi-bell"></i> Csengetés engedélyezése</a>
 {% endif %}
 {% endif %}
+<p>Hangerő: {{ volume[0] }}%</p>
+{% if current_user.haspermission('changevolume') %}
+<form action="#" method="post">
+<input type="range" name="volume" id="volume" class="form-range" min="0" max="100" onchange="this.form.submit()" value="{{ volume[0] }}">
+</form>
+{% endif %}
 {% endblock %}
