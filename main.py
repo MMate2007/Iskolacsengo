@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 import threading
 from math import ceil
 from functools import wraps
+import alsaaudio
 
 allowedfiles = ["wav", "mp3", "ogg"]
 
@@ -20,6 +21,7 @@ app.secret_key = "valami"
 loginmanager = LoginManager()
 loginmanager.init_app(app)
 pygame.mixer.init(buffer=2048, channels=4)
+alsamixer = alsaaudio.Mixer()
 with open("settings.json") as f:
 		settings = json.load(f)
 app.config["UPLOAD_FOLDER"] = settings["uploadFolder"]
@@ -187,10 +189,13 @@ def logout():
 	logout_user()
 	return redirect(url_for("home"))
 
-@app.route("/admin")
+@app.route("/admin", methods=("GET", "POST"))
 @login_required
 def admin():
-	return render_template("admin.html", bellEnabled=bellEnabled)
+	if request.method == "POST":
+		volume = int(request.form.get("volume"))
+		alsamixer.setvolume(volume)
+	return render_template("admin.html", bellEnabled=bellEnabled, volume=alsamixer.getvolume())
 
 @app.route("/changepassword", methods=("GET", "POST"))
 @login_required
