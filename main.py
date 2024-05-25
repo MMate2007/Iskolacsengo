@@ -13,6 +13,7 @@ import threading
 from math import ceil
 from functools import wraps
 import alsaaudio
+from gpiozero import CPUTemperature, DiskUsage, LoadAverage
 
 allowedfiles = ["wav", "mp3", "ogg"]
 
@@ -195,7 +196,10 @@ def admin():
 	if request.method == "POST":
 		volume = int(request.form.get("volume"))
 		alsamixer.setvolume(volume)
-	return render_template("admin.html", bellEnabled=bellEnabled, volume=alsamixer.getvolume())
+	cpu = CPUTemperature()
+	load = LoadAverage()
+	disk = DiskUsage()
+	return render_template("admin.html", bellEnabled=bellEnabled, volume=alsamixer.getvolume(), cputemp=cpu.temperature, cpuload=load.load_average, diskusage=disk.usage)
 
 @app.route("/changepassword", methods=("GET", "POST"))
 @login_required

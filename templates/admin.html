@@ -25,5 +25,8 @@
 <form action="#" method="post">
 <input type="range" name="volume" id="volume" class="form-range" min="0" max="100" onchange="this.form.submit()" value="{{ volume[0] }}">
 </form>
+<p>Processzor hőmérséklete: {{ cputemp }}°C</p>
+<p>Processzor kihasználtsága: {{ cpuload }}%</p>
+<p>Tárhely kihasználtsága: {{ diskusage }}%</p>
 {% endif %}
 {% endblock %}
