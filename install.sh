@@ -19,6 +19,7 @@ ExecStart=python $dir/main.py
 Restart=on-failure
 RestartSec=30
 KillSignal=SIGINT
+CPUWeight=1000
 
 [Install]
 WantedBy=default.target
