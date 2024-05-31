@@ -31,6 +31,7 @@ events = []
 lastloaded = 0
 settings = []
 bellEnabled = True
+customplaybackEnabled = True
 
 class SoundEvent():
 	def __init__(self, time, sound, type, volume = 1):
@@ -199,7 +200,7 @@ def admin():
 	cpu = CPUTemperature()
 	load = LoadAverage()
 	disk = DiskUsage()
-	return render_template("admin.html", bellEnabled=bellEnabled, volume=alsamixer.getvolume(), cputemp=cpu.temperature, cpuload=load.load_average, diskusage=disk.usage)
+	return render_template("admin.html", bellEnabled=bellEnabled, volume=alsamixer.getvolume(), cputemp=cpu.temperature, cpuload=load.load_average, diskusage=disk.usage, customplaybackEnabled=customplaybackEnabled)
 
 @app.route("/changepassword", methods=("GET", "POST"))
 @login_required
@@ -252,6 +253,19 @@ def changeBellStatus():
 	elif bellEnabled == False:
 		bellEnabled = True
 	return redirect(url_for("admin"))
+
+@app.route("/changeCustomplaybackStatus")
+@login_required
+@permission_required("disablebell")
+def changeCustomplaybackStatus():
+	global customplaybackEnabled
+	if customplaybackEnabled == True:
+		customplaybackEnabled = False
+		pygame.mixer.Channel(1).stop()
+	elif customplaybackEnabled == False:
+		customplaybackEnabled = True
+	return redirect(url_for("admin"))
+
 
 @app.route("/setpatterns", methods=("GET", "POST"))
 @login_required
@@ -711,6 +725,9 @@ while True:
 		loadTodaysProgramme()
 	for event in events:
 		if event.type == 1 and bellEnabled == False:
+			events.remove(event)
+			continue
+		if event.type == 2 and customplaybackEnabled == False:
 			events.remove(event)
 			continue
 		if event.time.hour == datetime.now().hour and event.time.minute == datetime.now().minute:

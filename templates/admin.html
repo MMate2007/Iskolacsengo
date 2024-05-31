@@ -19,6 +19,11 @@
 {% else %}
 <a href="{{ url_for('changeBellStatus') }}" class="btn btn-success" role="button"><i class="bi bi-bell"></i> Csengetés engedélyezése</a>
 {% endif %}
+{% if customplaybackEnabled %}
+<a href="{{ url_for('changeCustomplaybackStatus') }}" class="btn btn-danger" role="button"><i class="bi bi-volume-mute"></i> Csengetési renden kívüli bejátszások letiltása</a>
+{% else %}
+<a href="{{ url_for('changeCustomplaybackStatus') }}" class="btn btn-success" role="button"><i class="bi bi-volume-up"></i> Csengetési renden kívüli bejátszások engedélyezése</a>
+{% endif %}
 {% endif %}
 <p>Hangerő: {{ volume[0] }}%</p>
 {% if current_user.haspermission('changevolume') %}
