@@ -9,14 +9,15 @@ A Raspberry Pi controlled school bell system. - Egy iskolai csengővezérlő Ras
 - fájlok feltöltése böngészőből
 - felhasználók létrehozása és törlése böngészőből
 - beállítások módosítása böngészőből
-- egyedi csengetési hangok beállítása adott napra
+- egyedi csengetési hangok beállítása adott napra (így megoldható, hogy adott napon, adott tanórán más legyen pl. a kicsengetés)
+- csengetési renden kívüli bejátszások (pl. rádióműsor)
 - csengetés szüneteltetése
 - fájlok manuális lejátszása
 - hiba esetén automatikus újraindulás
+- hangerő módosítása böngészőből
 
 ## Telepítés
-Előfeltételek:
-  - Python legalább 3-as verziója
+A program Raspberry Pi-re van tervezve, de megfelelő körülmények között más rendszeren is futtatható!
 
 1. Klónozzuk ezt a repository-t!
 2. Nyissuk meg a mappát a terminálban és adjuk ki a `sudo ./install.sh` parancsot! Ehhez előfordulhat, hogy meg kell adni a Raspberry Pi OS telepítésekor megadott jelszavunkat.
