@@ -40,6 +40,7 @@
                     {% if current_user.haspermission("previewfiles") %}
                     <a href="{{ url_for('playasset', id=ringtone[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
                     {% endif %}
+                    <a href="{{ url_for('normalise', id=ringtone[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-soundwave"></i> Normalizálás</a>
                     <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=ringtone[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
                 </td>
             </tr>
@@ -78,6 +79,7 @@
                     {% if current_user.haspermission("previewfiles") %}
                     <a href="{{ url_for('playasset', id=music[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
                     {% endif %}
+                    <a href="{{ url_for('normalise', id=music[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-soundwave"></i> Normalizálás</a>
                     <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=music[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
                 </td>
             </tr>
@@ -116,6 +118,7 @@
                     {% if current_user.haspermission("previewfiles") %}
                     <a href="{{ url_for('playasset', id=file[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
                     {% endif %}
+                    <a href="{{ url_for('normalise', id=file[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-soundwave"></i> Normalizálás</a>
                     <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=file[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
                 </td>
             </tr>
