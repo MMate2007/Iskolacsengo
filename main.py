@@ -726,13 +726,13 @@ while True:
 	if lastloaded != datetime.now().day:
 		loadTodaysProgramme()
 	for event in events:
-		if event.type == 1 and bellEnabled == False:
-			events.remove(event)
-			continue
-		if event.type == 2 and customplaybackEnabled == False:
-			events.remove(event)
-			continue
 		if event.time.hour == datetime.now().hour and event.time.minute == datetime.now().minute:
+			if event.type == 1 and bellEnabled == False:
+				events.remove(event)
+				continue
+			if event.type == 2 and customplaybackEnabled == False:
+				events.remove(event)
+				continue
 			if event.type == 1 and pygame.mixer.Channel(1).get_busy() == True:
 				continue
 			event.play()
