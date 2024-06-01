@@ -34,4 +34,13 @@
 <p>Processzor hőmérséklete: {{ cputemp }}°C</p>
 <p>Processzor kihasználtsága: {{ cpuload }}%</p>
 <p>Tárhely kihasználtsága: {{ diskusage }}%</p>
+<h2>Mai program</h2>
+<table>
+    {% for event in events %}
+    <tr>
+        <td>{{ event.time.strftime("%H:%M") }}</td>
+        <td>{{ event.sound }}</td>
+    </tr>
+    {% endfor %}
+</table>
 {% endblock %}

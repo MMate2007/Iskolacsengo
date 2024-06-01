@@ -200,7 +200,7 @@ def admin():
 	cpu = CPUTemperature()
 	load = LoadAverage()
 	disk = DiskUsage()
-	return render_template("admin.html", bellEnabled=bellEnabled, volume=alsamixer.getvolume(), cputemp=cpu.temperature, cpuload=load.load_average, diskusage=disk.usage, customplaybackEnabled=customplaybackEnabled)
+	return render_template("admin.html", bellEnabled=bellEnabled, volume=alsamixer.getvolume(), cputemp=cpu.temperature, cpuload=load.load_average, diskusage=disk.usage, customplaybackEnabled=customplaybackEnabled, events=events)
 
 @app.route("/changepassword", methods=("GET", "POST"))
 @login_required
