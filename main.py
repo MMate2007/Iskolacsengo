@@ -5,7 +5,7 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 import pygame
 from datetime import datetime, timedelta
 from time import sleep
-from flask import Flask, render_template, request, url_for, redirect, flash
+from flask import Flask, render_template, request, url_for, redirect, flash, Markup
 import bcrypt
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
@@ -610,6 +610,8 @@ def addplayback():
 		db.commit()
 		db.close()
 		flash("Sikeres hozzáadás!", "success")
+		if date == datetime.now().strftime("%Y-%m-%d"):
+			flash(Markup("Mivel a mai dátumra adott hozzá egy bejátszást, ezért <a href='" + url_for('reload') + "'>újra kell tölteni</a> a mai napot a módosítások érvényesítéséhez. <br><i>Figyelem! Újratöltést <b>csak akkor szabad végezni, amikor éppen nem szól semmi</b>, hiszen ha a csengetés percében töltjük újra a mai programot, akkor az adott percre vonatkozó csengetések, bejátszások <b>újra meg fognak szólalni!</b></i>"), "info")
 		return redirect(url_for("listplaybacks"))
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
