@@ -15,6 +15,7 @@ A Raspberry Pi controlled school bell system. - Egy iskolai csengővezérlő Ras
 - fájlok manuális lejátszása
 - hiba esetén automatikus újraindulás
 - hangerő módosítása böngészőből
+- audió normalizálása böngészőből
 
 ## Telepítés
 A program Raspberry Pi-re van tervezve, de megfelelő körülmények között más rendszeren is futtatható!
