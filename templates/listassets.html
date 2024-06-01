@@ -7,9 +7,11 @@
 {% if previewplaying %}
 <a href="{{ url_for('stoppreview') }}" class="btn btn-danger" role="button"><i class="bi bi-stop-fill"></i> Lejátszás leállítása</a>
 {% endif %}
+{% if current_user.haspermission('ringtones') or current_user.haspermission('music') or current_user.haspermission('files') %}
+<a href="{{ url_for('uploadfile') }}" class="btn btn-primary" role="button"><i class="bi bi-upload"></i> Fájlok feltöltése</a>
+{% endif %}
 {% if current_user.haspermission('ringtones') %}
 <h2>Csengőhangok</h2>
-<a href="{{ url_for('uploadfile') }}" class="btn btn-primary" role="button"><i class="bi bi-upload"></i> Csengőhang feltöltése</a>
 <div class="table-responsive">
     <table class="table">
         <thead>
@@ -48,7 +50,6 @@
 {% endif %}
 {% if current_user.haspermission('music') %}
 <h2>Zenék</h2>
-<a href="{{ url_for('uploadfile') }}" class="btn btn-primary" role="button"><i class="bi bi-upload"></i> Zene feltöltése</a>
 <div class="table-responsive">
     <table class="table">
         <thead>
@@ -87,7 +88,6 @@
 {% endif %}
 {% if current_user.haspermission('files') %}
 <h2>Egyéb fájlok</h2>
-<a href="{{ url_for('uploadfile') }}" class="btn btn-primary" role="button"><i class="bi bi-upload"></i> Egyéb fájlok feltöltése</a>
 <div class="table-responsive">
     <table class="table">
         <thead>
