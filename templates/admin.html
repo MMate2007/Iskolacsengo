@@ -35,11 +35,19 @@
 <p>Processzor kihasználtsága: {{ cpuload }}%</p>
 <p>Tárhely kihasználtsága: {{ diskusage }}%</p>
 <h2>Mai program</h2>
-<table>
+<table class="table">
     {% for event in events %}
     <tr>
         <td>{{ event.time.strftime("%H:%M") }}</td>
         <td>{{ event.sound }}</td>
+        {% if current_user.haspermission("patterns") and current_user.haspermission("playbacks") %}
+        <td>
+            {% if current_user.haspermission("previewfiles") %}
+            <a href="{{ url_for('playprogramme', id=events.index(event), time=event.time) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás most</a>
+            {% endif %}
+            <a class="btn btn-danger" role="button" href="{{ url_for('deleteprogramme', id=events.index(event), time=event.time) }}"><i class="bi bi-trash"></i> Törlés</a>
+        </td>
+        {% endif %}
     </tr>
     {% endfor %}
 </table>

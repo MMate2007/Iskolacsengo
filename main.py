@@ -268,6 +268,24 @@ def changeCustomplaybackStatus():
 	return redirect(url_for("admin"))
 
 
+@app.route("/playprogramme/<int:id>/<time>")
+@login_required
+@permission_required("previewfiles")
+def playprogramme(id, time):
+	if events[id].time.strftime("%Y-%m-%d %H:%M:%S") == time:
+		events[id].play()
+		events.pop(id)
+	return redirect(url_for("admin"))
+
+@app.route("/deleteprogramme/<int:id>/<time>")
+@login_required
+@permission_required("patterns")
+@permission_required("playbacks")
+def deleteprogramme(id, time):
+	if events[id].time.strftime("%Y-%m-%d %H:%M:%S") == time:
+		events.pop(id)
+	return redirect(url_for("admin"))
+
 @app.route("/setpatterns", methods=("GET", "POST"))
 @login_required
 @permission_required("setdates")
