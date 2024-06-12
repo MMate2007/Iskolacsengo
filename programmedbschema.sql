@@ -23,8 +23,7 @@ CREATE TABLE assets (
 	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	asset_type INTEGER NOT NULL,
 	filepath TEXT NOT NULL UNIQUE,
-	length INTEGER,
-	volume INTEGER
+	length INTEGER
 );
 DROP TABLE IF EXISTS customsounds;
 CREATE TABLE customsounds (

@@ -35,19 +35,14 @@ bellEnabled = True
 customplaybackEnabled = True
 
 class SoundEvent():
-	def __init__(self, time, sound, type, volume = 1):
+	def __init__(self, time, sound, type):
 		self.time = time
 		self.sound = sound
-		self.volume = volume
 		self.type = type
-		if volume is None:
-			self.volume = 1
 	def play(self):
 		if self.type == 1:
-			pygame.mixer.Channel(0).set_volume(self.volume)
 			pygame.mixer.Channel(0).play(pygame.mixer.Sound(self.sound))
 		if self.type == 2:
-			pygame.mixer.Channel(1).set_volume(self.volume)
 			pygame.mixer.Channel(1).play(pygame.mixer.Sound(self.sound))
 
 def readSettings():
@@ -66,9 +61,9 @@ def loadTodaysProgramme():
 	loadcursor.execute("DELETE FROM customsounds WHERE date < DATE('now', 'localtime')")
 	loadcursor.execute("DELETE FROM playbacks WHERE date < DATE('now', 'localtime')")
 	loaddb.commit()
-	results = loadcursor.execute("SELECT time, filepath, volume FROM playbacks INNER JOIN assets ON playbacks.asset_id = assets.id WHERE date = DATE('now', 'localtime') ORDER BY time").fetchall()
+	results = loadcursor.execute("SELECT time, filepath FROM playbacks INNER JOIN assets ON playbacks.asset_id = assets.id WHERE date = DATE('now', 'localtime') ORDER BY time").fetchall()
 	for result in results:
-		events.append(SoundEvent(datetime.strptime(result[0], "%H:%M"), result[1], 2, result[2]))
+		events.append(SoundEvent(datetime.strptime(result[0], "%H:%M"), result[1], 2))
 	result = loadcursor.execute("SELECT pattern_id FROM dates WHERE date = DATE('now', 'localtime')").fetchone()
 	if result is None:
 		loaddb.close()
@@ -79,30 +74,30 @@ def loadTodaysProgramme():
 		if result[0] == 1:
 			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 1", (result[3], )).fetchone()
 			if customfileresult is None:
-				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classStartAssetId"],)).fetchone()
+				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classStartAssetId"],)).fetchone()
 			else:
-				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1, assetresult[1]))
+				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
+			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1))
 			if settings["classEndReminderMin"] != 0:
 				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 2", (result[3], )).fetchone()
 				if customfileresult is None:
-					assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classEndReminderAssetId"],)).fetchone()
+					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classEndReminderAssetId"],)).fetchone()
 				else:
-					assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-				events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], 1, assetresult[1]))
+					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
+				events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], 1))
 			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 3", (result[3], )).fetchone()
 			if customfileresult is None:
-				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (settings["classEndAssetId"],)).fetchone()
+				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classEndAssetId"],)).fetchone()
 			else:
-				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M"), assetresult[0], 1, assetresult[1]))
+				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
+			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M"), assetresult[0], 1))
 		if result[0] == 2:
 			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ?", (result[3], )).fetchone()
 			if customfileresult is None:
-				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (result[4],)).fetchone()
+				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (result[4],)).fetchone()
 			else:
-				assetresult = loadcursor.execute("SELECT filepath, volume FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1, assetresult[1]))
+				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
+			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1))
 	loaddb.close()
 
 class User():
@@ -443,15 +438,15 @@ def listassets():
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
 	if current_user.haspermission("ringtones"):
-		ringtones = cursor.execute("SELECT id, filepath, length, volume FROM assets WHERE asset_type = 1").fetchall()
+		ringtones = cursor.execute("SELECT id, filepath, length FROM assets WHERE asset_type = 1").fetchall()
 	else:
 		ringtones = []
 	if current_user.haspermission("music"):
-		musiclist = cursor.execute("SELECT id, filepath, length, volume FROM assets WHERE asset_type = 2").fetchall()
+		musiclist = cursor.execute("SELECT id, filepath, length FROM assets WHERE asset_type = 2").fetchall()
 	else:
 		musiclist = []
 	if current_user.haspermission("files"):
-		files = cursor.execute("SELECT id, filepath, length, volume FROM assets WHERE asset_type = 3").fetchall()
+		files = cursor.execute("SELECT id, filepath, length FROM assets WHERE asset_type = 3").fetchall()
 	else:
 		files = []
 	db.close()
