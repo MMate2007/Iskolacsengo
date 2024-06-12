@@ -190,7 +190,7 @@ def logout():
 @app.route("/admin", methods=("GET", "POST"))
 @login_required
 def admin():
-	if request.method == "POST":
+	if request.method == "POST" and current_user.haspermission("changevolume"):
 		volume = int(request.form.get("volume"))
 		alsamixer.setvolume(volume)
 	cpu = CPUTemperature()
