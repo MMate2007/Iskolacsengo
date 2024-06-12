@@ -474,6 +474,28 @@ def normalise(id):
 	flash("Sikeres normalizálás!", "success")
 	return redirect(url_for("listassets"))
 
+@app.route("/audio/<int:id>/converttomono")
+@login_required
+def converttomono(id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	result = cursor.execute("SELECT filepath, asset_type FROM assets WHERE id = ?", (id,)).fetchone()
+	ftype = result[1]
+	if not current_user.haspermission('ringtones') and ftype == 1:
+		flash("Nincs jogosultsága csengőhang monósításához!", "danger")
+		return redirect(url_for("listassets"))
+	if not current_user.haspermission("music") and ftype == 2:
+		flash("Nincs jogosultsága zene monósításához!", "danger")
+		return redirect(url_for("listassets"))
+	if not current_user.haspermission("files") and ftype == 3:
+		flash("Nincs jogosultsága egyéb fájlok monósításához!", "danger")
+		return redirect(url_for("listassets"))
+	sound = AudioSegment.from_file(result[0])
+	sound = sound.set_channels(1)
+	sound.export(result[0])
+	flash("Sikeres monósítás!", "success")
+	return redirect(url_for("listassets"))
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in allowedfiles
