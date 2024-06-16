@@ -16,7 +16,7 @@ import alsaaudio
 from gpiozero import CPUTemperature, DiskUsage, LoadAverage
 from pydub import AudioSegment, effects
 
-allowedfiles = ["wav", "mp3", "ogg"]
+allowedfiles = ["wav", "mp3", "ogg", "m4a"]
 
 app = Flask(__name__)
 app.secret_key = "valami"
@@ -262,6 +262,27 @@ def changeCustomplaybackStatus():
 		customplaybackEnabled = True
 	return redirect(url_for("admin"))
 
+@app.route("/announce", methods=("GET", "POST"))
+@login_required
+@permission_required("announce")
+def announce():
+	if request.method == "POST":
+		file = request.files['file']
+		filename = secure_filename(file.filename)
+		if file and allowed_file(file.filename):
+			file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+			audio = AudioSegment.from_file(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+			normalised = effects.normalize(audio)
+			normalised.export(os.path.join(app.config["UPLOAD_FOLDER"], "bemondas.wav"), format="wav")
+			pygame.mixer.Channel(3).play(pygame.mixer.Sound(os.path.join(app.config["UPLOAD_FOLDER"], "bemondas.wav")))
+			os.remove(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+			os.remove(os.path.join(app.config["UPLOAD_FOLDER"], "bemondas.wav"))
+			flash("A bemondás elkezdődött!", "success")
+			return redirect(url_for("announce"))
+		else:
+			flash("Valami nem sikerült!", "danger")
+			return redirect(url_for("announce"))
+	return render_template("announce.html")
 
 @app.route("/playprogramme/<int:id>/<time>")
 @login_required

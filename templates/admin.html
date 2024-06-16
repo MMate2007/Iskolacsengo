@@ -25,6 +25,9 @@
 <a href="{{ url_for('changeCustomplaybackStatus') }}" class="btn btn-success" role="button"><i class="bi bi-volume-up"></i> Csengetési renden kívüli bejátszások engedélyezése</a>
 {% endif %}
 {% endif %}
+{% if current_user.haspermission('announce') %}
+<a href="{{ url_for('announce') }}" class="btn btn-warning" role="button"><i class="bi bi-mic-fill"></i> Bemondás</a>
+{% endif %}
 <p>Hangerő: {{ volume[0] }}%</p>
 {% if current_user.haspermission('changevolume') %}
 <form action="#" method="post">
