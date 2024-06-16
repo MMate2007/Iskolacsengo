@@ -4,7 +4,7 @@
 {% block title %}Fájlok{% endblock %}
 {% block headtitle %}Fájlok{% endblock %}
 {% block content %}
-{% if previewplaying %}
+{% if previewplaying and current_user.haspermission('previewfiles') %}
 <a href="{{ url_for('stoppreview') }}" class="btn btn-danger" role="button"><i class="bi bi-stop-fill"></i> Lejátszás leállítása</a>
 {% endif %}
 {% if current_user.haspermission('ringtones') or current_user.haspermission('music') or current_user.haspermission('files') %}
