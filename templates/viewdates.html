@@ -13,6 +13,9 @@
             <tr>
                 <th>Nap</th>
                 <th>Csengetési rend</th>
+                {% if current_user.haspermission("playbacks") %}
+                <th></th>
+                {% endif %}
                 <th>Műveletek</th>
             </tr>
         </thead>
@@ -21,9 +24,20 @@
             <tr>
                 <td>{{ date[0] }}</td>
                 <td>{{ date[1] }}</td>
+                {% if current_user.haspermission("playbacks") %}
+                <td>
+                    {% if date[3] %}
+                    <span class="text-warning"><i class="bi bi-exclamation-triangle-fill"></i> Csengetési renden kívüli esemény</span>
+                    {% endif %}
+                </td>
+                {% endif %}
                 <td>
                     {% if current_user.haspermission("setcustomfiles") %}
+                    {% if date[2] %}
+                    <a href="{{ url_for('setcustomfile', date=date[0]) }}" class="btn btn-primary"><i class="bi bi-volume-up-fill"></i> Egyedi hangok beállítása</a>
+                    {% else %}
                     <a href="{{ url_for('setcustomfile', date=date[0]) }}" class="btn btn-outline-primary"><i class="bi bi-volume-up-fill"></i> Egyedi hangok beállítása</a>
+                    {% endif %}
                     {% endif %}
                     <a class="btn btn-danger" role="button" href="{{ url_for('deletedate', date=date[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
                 </td>
