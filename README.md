@@ -22,5 +22,5 @@ A program Raspberry Pi-re van tervezve, de megfelelő körülmények között m�
 
 1. Klónozzuk ezt a repository-t!
 2. Nyissuk meg a mappát a terminálban és adjuk ki a `sudo ./install.sh` parancsot! Ehhez előfordulhat, hogy meg kell adni a Raspberry Pi OS telepítésekor megadott jelszavunkat.
-3. Ezután ha minden sikerült már fut is a program, melyet az 5000-es porton érhetünk el (ezt elérhetjük más eszközről is, ehhez írjuk be a böngészőbe a Raspberry Pi IP címét, vagy a korábban beállított hostname-et és a végére írjuk oda: *:5000*. Meg is nézhetjük a program státuszát ha terminálba begépeljük a következőt: `sudo systemctl status iskolacsengo.service`.
+3. Ezután ha minden sikerült már fut is a program, melyet az 5000-es porton érhetünk el (ezt elérhetjük más eszközről is, ehhez írjuk be a böngészőbe a Raspberry Pi IP címét, vagy a korábban beállított hostname-et és a végére írjuk oda: *:5000*. Az alap *felhasználónév* és *jelszó* az **admin**. Meg is nézhetjük a program státuszát ha terminálba begépeljük a következőt: `sudo systemctl status iskolacsengo.service`.
 4. A program leállításhoz adjuk ki a `sudo systemctl stop iskolacsengo.service` parancsot!
