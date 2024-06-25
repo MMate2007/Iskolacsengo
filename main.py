@@ -452,6 +452,18 @@ def addevent(patternid, eventtype):
 		ringtones = cursor.execute("SELECT id, filepath FROM assets WHERE asset_type = 1").fetchall()
 		db.close()
 		return render_template("addring.html", pattern_name=name[0], ringtones=ringtones)
+	elif eventtype == 3:
+		if request.method == "POST":
+			start = request.form.get("start")
+			end = request.form.get("end")
+			db = sqlite3.connect(settings["programmesDb"])
+			cursor = db.cursor()
+			cursor.execute("INSERT INTO schedule (pattern_id, schedule_type, start, end) VALUES (?,3,?,?)", (patternid,start,end))
+			db.commit()
+			flash("Zenei blokk sikeresen hozzáadva a csengetési rendhez!", "success")
+			db.close()
+		return render_template("addlesson.html", pattern_name=name[0])
+
 
 @app.route("/listassets")
 @login_required
