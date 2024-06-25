@@ -665,6 +665,52 @@ def setcustomfile(date):
 		db.close()
 	return render_template("setcustomfile.html", ringtones=ringtones, schedule=schedule, customfiles=customfiles)
 
+@app.route("/viewmusic/<string:date>")
+@login_required
+@permission_required("setmusic")
+def viewmusic(date):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	blocks = cursor.execute("SELECT id, start, end FROM schedule WHERE schedule_type = 3 AND pattern_id = (SELECT pattern_id FROM dates WHERE date = ?)", (date, )).fetchall()
+	music = []
+	for block in blocks:
+		music.append(cursor.execute("SELECT customsounds.id, filepath FROM customsounds INNER JOIN assets ON customsounds.asset_id = assets.id WHERE schedule_id = ? ORDER BY params", (block[0], )).fetchall())
+	db.close()
+	print(music)
+	return render_template("music.html", blocks=enumerate(blocks), music=music, date=date)
+
+@app.route("/viewmusic/<string:date>/add/<int:schedule_id>", methods=("GET", "POST"))
+@login_required
+@permission_required("setmusic")
+def addmusic(date, schedule_id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	if request.method == "POST":
+		params = cursor.execute("SELECT MAX(params) FROM customsounds WHERE date = ? AND schedule_id = ?", (date, schedule_id)).fetchone()
+		param = 0
+		if params[0] != None:
+			param = int(params[0])+1
+		cursor.execute("INSERT INTO customsounds(asset_id, date, schedule_id, params) VALUES (?, ?, ?, ?)", (request.form.get("file"), date, schedule_id, param))
+		db.commit()
+		db.close()
+		flash("Zene sikeresen hozzáadva!", "success")
+		return redirect(url_for("viewmusic", date=date))
+	files = cursor.execute("SELECT id, filepath FROM assets WHERE asset_type = 2").fetchall()
+	db.close()
+	return render_template("addmusic.html", files=files)
+
+@app.route("/viewmusic/<string:date>/delete/<int:id>")
+@login_required
+@permission_required("setmusic")
+def deletemusic(id, date):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	cursor.execute("DELETE FROM customsounds WHERE id = ?", (id, ))
+	db.commit()
+	db.close()
+	flash("Sikeres törlés!", "success")
+	return redirect(url_for("viewmusic", date=date))
+
 @app.route("/listplaybacks")
 @login_required
 @permission_required("playbacks")

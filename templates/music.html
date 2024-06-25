@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}Zene beállítása{% endblock %}
+{% block headtitle %}Zene beállítása{% endblock %}
+{% block content %}
+<form action="#" method="POST">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Idő</th>
+                    <th>Hangfájlok</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for id, block in blocks %}
+                <tr>
+                    <td>
+                        {{ block[1] }} - {{ block[2] }}
+                    </td>
+                    <td>
+                        <table>
+                        <a href="{{ url_for('addmusic', date=date, schedule_id=block[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Zene hozzáadása</a>
+                            {% for entry in music[id] %}
+                            <tr>
+                                <td>{{entry[1]}}</td>
+                                <td><a class="btn btn-danger" role="button" href="{{ url_for('deletemusic', id=entry[0], date=date) }}"><i class="bi bi-trash"></i> Törlés</a></td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Mentés</button>
+</form>
+
+{% endblock %}
