@@ -674,9 +674,8 @@ def viewmusic(date):
 	blocks = cursor.execute("SELECT id, start, end FROM schedule WHERE schedule_type = 3 AND pattern_id = (SELECT pattern_id FROM dates WHERE date = ?)", (date, )).fetchall()
 	music = []
 	for block in blocks:
-		music.append(cursor.execute("SELECT customsounds.id, filepath FROM customsounds INNER JOIN assets ON customsounds.asset_id = assets.id WHERE schedule_id = ? ORDER BY params", (block[0], )).fetchall())
+		music.append(cursor.execute("SELECT customsounds.id, filepath FROM customsounds INNER JOIN assets ON customsounds.asset_id = assets.id WHERE schedule_id = ? AND date = ? ORDER BY params", (block[0], date)).fetchall())
 	db.close()
-	print(music)
 	return render_template("music.html", blocks=enumerate(blocks), music=music, date=date)
 
 @app.route("/viewmusic/<string:date>/add/<int:schedule_id>", methods=("GET", "POST"))
