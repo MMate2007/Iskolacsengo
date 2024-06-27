@@ -71,6 +71,7 @@ class MusicFadeEvent():
 	
 	def play(self):
 		pygame.mixer.music.fadeout(self.fade*1000)
+		pygame.mixer.music.unload()
 
 def readSettings():
 	global settings
