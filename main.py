@@ -22,7 +22,8 @@ app = Flask(__name__)
 app.secret_key = "valami"
 loginmanager = LoginManager()
 loginmanager.init_app(app)
-pygame.mixer.init(buffer=2048, channels=4)
+pygame.mixer.pre_init(buffer=2048, channels=4)
+pygame.init()
 alsamixer = alsaaudio.Mixer()
 with open("settings.json") as f:
 		settings = json.load(f)
@@ -33,6 +34,8 @@ lastloaded = 0
 settings = []
 bellEnabled = True
 customplaybackEnabled = True
+musicEnabled = True
+music = []
 
 class SoundEvent():
 	def __init__(self, time, sound, type):
@@ -44,6 +47,30 @@ class SoundEvent():
 			pygame.mixer.Channel(0).play(pygame.mixer.Sound(self.sound))
 		if self.type == 2:
 			pygame.mixer.Channel(1).play(pygame.mixer.Sound(self.sound))
+
+class MusicEvent():
+	def __init__(self, time, music):
+		self.time = time
+		self.music = music
+		self.sound = "Zene"
+
+	def play(self):
+		global music
+		music = self.music
+		pygame.mixer.music.load(music.pop())
+		pygame.mixer.music.set_endevent(pygame.USEREVENT+1)
+		pygame.mixer.music.play()
+		if music != []:
+			pygame.mixer.music.queue(music.pop())
+
+class MusicFadeEvent():
+	def __init__(self, time, fade):
+		self.time = time
+		self.fade = fade
+		self.sound = "Zene elhalkítása"
+	
+	def play(self):
+		pygame.mixer.music.fadeout(self.fade*1000)
 
 def readSettings():
 	global settings
@@ -98,6 +125,14 @@ def loadTodaysProgramme():
 			else:
 				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
 			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1))
+		if result[0] == 3:
+			getmusic = loadcursor.execute("SELECT filepath FROM assets INNER JOIN customsounds ON assets.id = customsounds.asset_id WHERE customsounds.date = DATE('now', 'localtime') AND customsounds.schedule_id = ? ORDER BY customsounds.params DESC", (result[3], )).fetchall()
+			if getmusic != []:
+				music = []
+				for entry in getmusic:
+					music.append(entry[0])
+				events.append(MusicEvent(datetime.strptime(result[1], "%H:%M"), music))
+				events.append(MusicFadeEvent(datetime.strptime(result[2], "%H:%M")-timedelta(seconds=settings["musicFadeOut"]), settings["musicFadeOut"]))
 	loaddb.close()
 
 class User():
@@ -196,7 +231,7 @@ def admin():
 	cpu = CPUTemperature()
 	load = LoadAverage()
 	disk = DiskUsage()
-	return render_template("admin.html", bellEnabled=bellEnabled, volume=alsamixer.getvolume(), cputemp=cpu.temperature, cpuload=load.load_average, diskusage=disk.usage, customplaybackEnabled=customplaybackEnabled, events=events)
+	return render_template("admin.html", bellEnabled=bellEnabled, volume=alsamixer.getvolume(), cputemp=cpu.temperature, cpuload=load.load_average, diskusage=disk.usage, customplaybackEnabled=customplaybackEnabled, events=events, musicEnabled=musicEnabled)
 
 @app.route("/changepassword", methods=("GET", "POST"))
 @login_required
@@ -248,6 +283,19 @@ def changeBellStatus():
 		pygame.mixer.Channel(0).stop()
 	elif bellEnabled == False:
 		bellEnabled = True
+	return redirect(url_for("admin"))
+
+@app.route("/changeMusicStatus")
+@login_required
+@permission_required("disablemusic")
+def changeMusicStatus():
+	global musicEnabled
+	if musicEnabled == True:
+		musicEnabled = False
+		pygame.mixer.music.stop()
+		pygame.mixer.music.unload()
+	elif musicEnabled == False:
+		musicEnabled = True
 	return redirect(url_for("admin"))
 
 @app.route("/changeCustomplaybackStatus")
@@ -862,15 +910,27 @@ while True:
 	if lastloaded != datetime.now().day:
 		loadTodaysProgramme()
 	for event in events:
-		if event.time.hour == datetime.now().hour and event.time.minute == datetime.now().minute:
-			if event.type == 1 and bellEnabled == False:
+		if event.time.hour == datetime.now().hour and event.time.minute == datetime.now().minute and isinstance(event, (SoundEvent, MusicEvent)):
+			if isinstance(event, MusicEvent) and musicEnabled == False:
 				events.remove(event)
 				continue
-			if event.type == 2 and customplaybackEnabled == False:
-				events.remove(event)
+			if isinstance(event, MusicEvent) and (pygame.mixer.Channel(1).get_busy() == True or pygame.mixer.Channel(0).get_busy() == True):
 				continue
-			if event.type == 1 and pygame.mixer.Channel(1).get_busy() == True:
-				continue
+			if not isinstance(event, MusicEvent):
+				if event.type == 1 and bellEnabled == False:
+					events.remove(event)
+					continue
+				if event.type == 2 and customplaybackEnabled == False:
+					events.remove(event)
+					continue
+				if event.type == 1 and pygame.mixer.Channel(1).get_busy() == True:
+					continue
 			event.play()
 			events.remove(event)
+		if datetime.now().time().replace(microsecond=0) == event.time.time() and isinstance(event, MusicFadeEvent):
+			event.play()
+			events.remove(event)
+	for event in pygame.event.get():
+		if event.type == pygame.USEREVENT+1 and music != []:
+			pygame.mixer.music.queue(music.pop())
 	sleep(0.2)

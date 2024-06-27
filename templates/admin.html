@@ -25,6 +25,13 @@
 <a href="{{ url_for('changeCustomplaybackStatus') }}" class="btn btn-success" role="button"><i class="bi bi-volume-up"></i> Csengetési renden kívüli bejátszások engedélyezése</a>
 {% endif %}
 {% endif %}
+{% if current_user.haspermission('disablemusic') %}
+{% if musicEnabled %}
+<a href="{{ url_for('changeMusicStatus') }}" class="btn btn-danger" role="button"><i class="bi bi-music-note"></i> Zene letiltása</a>
+{% else %}
+<a href="{{ url_for('changeMusicStatus') }}" class="btn btn-success" role="button"><i class="bi bi-music-note"></i> Zene engedélyezése</a>
+{% endif %}
+{% endif %}
 {% if current_user.haspermission('announce') %}
 <a href="{{ url_for('announce') }}" class="btn btn-warning" role="button"><i class="bi bi-mic-fill"></i> Bemondás</a>
 {% endif %}

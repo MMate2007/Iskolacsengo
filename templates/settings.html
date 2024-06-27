@@ -43,6 +43,10 @@
         </select>
     </div>
     <div class="mb-3">
+        <label for="musicFadeOut" class="form-label">Zene lekeverési idő:</label>
+        <input type="number" name="musicFadeOut" id="musicFadeOut" class="form-control" required value="{{ settings['musicFadeOut'] }}"> másodperc
+    </div>
+    <div class="mb-3">
         <label for="uploadFolder" class="form-label">Fájlok feltöltése ebbe a mappába:</label>
         <input type="text" name="uploadFolder" id="uploadFolder" class="form-control" required value="{{ settings['uploadFolder'] }}">
     </div>
