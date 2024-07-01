@@ -449,7 +449,7 @@ def deletepattern(id):
 def viewschedule(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	results = cursor.execute("SELECT schedule.id, schedule_type, start, end, filepath FROM schedule LEFT OUTER JOIN assets ON schedule.asset_id = assets.id WHERE pattern_id = ? ORDER BY start", (id,)).fetchall()
+	results = cursor.execute("SELECT schedule.id, schedule_type, start, end, filepath FROM schedule LEFT OUTER JOIN assets ON schedule.asset_id = assets.id WHERE pattern_id = ? ORDER BY start, schedule_type", (id,)).fetchall()
 	name = cursor.execute("SELECT friendlyname FROM patterns WHERE id = ?", (id,)).fetchone()
 	db.close()
 	return render_template("viewschedule.html", schedule=results, pattern_name=name[0], patternid=id)
