@@ -913,10 +913,11 @@ thread = threading.Thread(target=lambda: app.run(debug=True, host="0.0.0.0", use
 thread.daemon = True
 thread.start()
 while True:
-	if lastloaded != datetime.now().day:
+	time = datetime.now()
+	if lastloaded != time.day:
 		loadTodaysProgramme()
 	for event in events:
-		if event.time.hour == datetime.now().hour and event.time.minute == datetime.now().minute and isinstance(event, (SoundEvent, MusicEvent)):
+		if event.time.hour == time.hour and event.time.minute == time.minute and isinstance(event, (SoundEvent, MusicEvent)):
 			if isinstance(event, MusicEvent) and musicEnabled == False:
 				events.remove(event)
 				continue
@@ -933,7 +934,7 @@ while True:
 					continue
 			event.play()
 			events.remove(event)
-		if datetime.now().time().replace(microsecond=0) == event.time.time() and isinstance(event, MusicFadeEvent):
+		if time.time().replace(microsecond=0) == event.time.time() and isinstance(event, MusicFadeEvent):
 			event.play()
 			events.remove(event)
 	if pygame.mixer.music.get_busy():
