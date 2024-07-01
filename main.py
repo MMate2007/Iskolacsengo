@@ -97,7 +97,7 @@ def loadTodaysProgramme():
 		loaddb.close()
 		return
 	patternid = result[0]
-	results = loadcursor.execute("SELECT schedule_type, start, end, id, asset_id FROM schedule WHERE pattern_id = ? ORDER BY id", (patternid,)).fetchall()
+	results = loadcursor.execute("SELECT schedule_type, start, end, id, asset_id FROM schedule WHERE pattern_id = ? ORDER BY start, schedule_type", (patternid,)).fetchall()
 	for result in results:
 		if result[0] == 1:
 			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 1", (result[3], )).fetchone()
