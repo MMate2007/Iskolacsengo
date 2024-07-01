@@ -26,18 +26,25 @@
                 <td>{{ date[1] }}</td>
                 {% if current_user.haspermission("playbacks") %}
                 <td>
-                    {% if date[3] %}
+                    {% if date[4] %}
                     <span class="text-warning"><i class="bi bi-exclamation-triangle-fill"></i> Csengetési renden kívüli esemény</span>
                     {% endif %}
                 </td>
                 {% endif %}
                 <td>
                     {% if current_user.haspermission("setcustomfiles") %}
-                    {% if date[2] %}
-                    <a href="{{ url_for('setcustomfile', date=date[0]) }}" class="btn btn-primary"><i class="bi bi-volume-up-fill"></i> Egyedi hangok beállítása</a>
-                    {% else %}
-                    <a href="{{ url_for('setcustomfile', date=date[0]) }}" class="btn btn-outline-primary"><i class="bi bi-volume-up-fill"></i> Egyedi hangok beállítása</a>
+                        {% if date[2] %}
+                        <a href="{{ url_for('setcustomfile', date=date[0]) }}" class="btn btn-primary"><i class="bi bi-volume-up-fill"></i> Egyedi hangok beállítása</a>
+                        {% else %}
+                        <a href="{{ url_for('setcustomfile', date=date[0]) }}" class="btn btn-outline-primary"><i class="bi bi-volume-up-fill"></i> Egyedi hangok beállítása</a>
+                        {% endif %}
                     {% endif %}
+                    {% if current_user.haspermission("setmusic") %}
+                        {% if date[3] %}
+                        <a href="{{ url_for('viewmusic', date=date[0]) }}" class="btn btn-primary"><i class="bi bi-music-note-beamed"></i> Zene beállítása</a>
+                        {% else %}
+                        <a href="{{ url_for('viewmusic', date=date[0]) }}" class="btn btn-outline-primary"><i class="bi bi-music-note-beamed"></i> Zene beállítása</a>
+                        {% endif %}
                     {% endif %}
                     <a class="btn btn-danger" role="button" href="{{ url_for('deletedate', date=date[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
                 </td>

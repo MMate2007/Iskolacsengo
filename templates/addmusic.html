@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}Zene kiválasztása{% endblock %}
+{% block headtitle %}Zene kiválasztása{% endblock %}
+{% block content %}
+
+<form method="post" action="#">
+    <div class="mb-3">
+        <label for="file" class="form-label">Fájl:</label>
+        <select name="file" id="file" class="form-select" required>
+            {% for file in files %}
+                <option value="{{ file[0] }}">{{ file[1] }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Mentés</button>
+</form>
+
+{% endblock %}

@@ -33,6 +33,9 @@ lastloaded = 0
 settings = []
 bellEnabled = True
 customplaybackEnabled = True
+musicEnabled = True
+music = []
+musicpos = 0
 
 class SoundEvent():
 	def __init__(self, time, sound, type):
@@ -44,6 +47,31 @@ class SoundEvent():
 			pygame.mixer.Channel(0).play(pygame.mixer.Sound(self.sound))
 		if self.type == 2:
 			pygame.mixer.Channel(1).play(pygame.mixer.Sound(self.sound))
+
+class MusicEvent():
+	def __init__(self, time, music):
+		self.time = time
+		self.music = music
+		self.sound = "Zene"
+
+	def play(self):
+		global music, musicpos
+		music = self.music
+		pygame.mixer.music.load(music.pop())
+		pygame.mixer.music.play()
+		musicpos = pygame.mixer.music.get_pos()
+		if music != []:
+			pygame.mixer.music.queue(music.pop())
+
+class MusicFadeEvent():
+	def __init__(self, time, fade):
+		self.time = time
+		self.fade = fade
+		self.sound = "Zene elhalkítása"
+	
+	def play(self):
+		pygame.mixer.music.fadeout(self.fade*1000)
+		pygame.mixer.music.unload()
 
 def readSettings():
 	global settings
@@ -69,7 +97,7 @@ def loadTodaysProgramme():
 		loaddb.close()
 		return
 	patternid = result[0]
-	results = loadcursor.execute("SELECT schedule_type, start, end, id, asset_id FROM schedule WHERE pattern_id = ? ORDER BY id", (patternid,)).fetchall()
+	results = loadcursor.execute("SELECT schedule_type, start, end, id, asset_id FROM schedule WHERE pattern_id = ? ORDER BY start, schedule_type", (patternid,)).fetchall()
 	for result in results:
 		if result[0] == 1:
 			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 1", (result[3], )).fetchone()
@@ -98,6 +126,14 @@ def loadTodaysProgramme():
 			else:
 				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
 			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1))
+		if result[0] == 3:
+			getmusic = loadcursor.execute("SELECT filepath FROM assets INNER JOIN customsounds ON assets.id = customsounds.asset_id WHERE customsounds.date = DATE('now', 'localtime') AND customsounds.schedule_id = ? ORDER BY customsounds.params DESC", (result[3], )).fetchall()
+			if getmusic != []:
+				music = []
+				for entry in getmusic:
+					music.append(entry[0])
+				events.append(MusicEvent(datetime.strptime(result[1], "%H:%M"), music))
+				events.append(MusicFadeEvent(datetime.strptime(result[2], "%H:%M")-timedelta(seconds=settings["musicFadeOut"]), settings["musicFadeOut"]))
 	loaddb.close()
 
 class User():
@@ -196,7 +232,7 @@ def admin():
 	cpu = CPUTemperature()
 	load = LoadAverage()
 	disk = DiskUsage()
-	return render_template("admin.html", bellEnabled=bellEnabled, volume=alsamixer.getvolume(), cputemp=cpu.temperature, cpuload=load.load_average, diskusage=disk.usage, customplaybackEnabled=customplaybackEnabled, events=events)
+	return render_template("admin.html", bellEnabled=bellEnabled, volume=alsamixer.getvolume(), cputemp=cpu.temperature, cpuload=load.load_average, diskusage=disk.usage, customplaybackEnabled=customplaybackEnabled, events=events, musicEnabled=musicEnabled)
 
 @app.route("/changepassword", methods=("GET", "POST"))
 @login_required
@@ -248,6 +284,19 @@ def changeBellStatus():
 		pygame.mixer.Channel(0).stop()
 	elif bellEnabled == False:
 		bellEnabled = True
+	return redirect(url_for("admin"))
+
+@app.route("/changeMusicStatus")
+@login_required
+@permission_required("disablemusic")
+def changeMusicStatus():
+	global musicEnabled
+	if musicEnabled == True:
+		musicEnabled = False
+		pygame.mixer.music.stop()
+		pygame.mixer.music.unload()
+	elif musicEnabled == False:
+		musicEnabled = True
 	return redirect(url_for("admin"))
 
 @app.route("/changeCustomplaybackStatus")
@@ -331,7 +380,7 @@ def dates():
 def viewdates():
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	results = cursor.execute("SELECT date, friendlyname, EXISTS(SELECT 1 FROM customsounds WHERE customsounds.date = dates.date), EXISTS(SELECT 1 FROM playbacks WHERE playbacks.date = dates.date) FROM dates INNER JOIN patterns ON dates.pattern_id = patterns.id ORDER BY date").fetchall()
+	results = cursor.execute("SELECT date, friendlyname, EXISTS(SELECT 1 FROM customsounds INNER JOIN schedule ON customsounds.schedule_id = schedule.id WHERE customsounds.date = dates.date AND schedule.schedule_type != 3), EXISTS(SELECT 1 FROM customsounds INNER JOIN schedule ON customsounds.schedule_id = schedule.id WHERE customsounds.date = dates.date AND schedule.schedule_type = 3), EXISTS(SELECT 1 FROM playbacks WHERE playbacks.date = dates.date) FROM dates INNER JOIN patterns ON dates.pattern_id = patterns.id ORDER BY date").fetchall()
 	db.close()
 	return render_template("viewdates.html", dates=results)
 
@@ -400,7 +449,7 @@ def deletepattern(id):
 def viewschedule(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	results = cursor.execute("SELECT schedule.id, schedule_type, start, end, filepath FROM schedule LEFT OUTER JOIN assets ON schedule.asset_id = assets.id WHERE pattern_id = ? ORDER BY start", (id,)).fetchall()
+	results = cursor.execute("SELECT schedule.id, schedule_type, start, end, filepath FROM schedule LEFT OUTER JOIN assets ON schedule.asset_id = assets.id WHERE pattern_id = ? ORDER BY start, schedule_type", (id,)).fetchall()
 	name = cursor.execute("SELECT friendlyname FROM patterns WHERE id = ?", (id,)).fetchone()
 	db.close()
 	return render_template("viewschedule.html", schedule=results, pattern_name=name[0], patternid=id)
@@ -452,6 +501,18 @@ def addevent(patternid, eventtype):
 		ringtones = cursor.execute("SELECT id, filepath FROM assets WHERE asset_type = 1").fetchall()
 		db.close()
 		return render_template("addring.html", pattern_name=name[0], ringtones=ringtones)
+	elif eventtype == 3:
+		if request.method == "POST":
+			start = request.form.get("start")
+			end = request.form.get("end")
+			db = sqlite3.connect(settings["programmesDb"])
+			cursor = db.cursor()
+			cursor.execute("INSERT INTO schedule (pattern_id, schedule_type, start, end) VALUES (?,3,?,?)", (patternid,start,end))
+			db.commit()
+			flash("Zenei blokk sikeresen hozzáadva a csengetési rendhez!", "success")
+			db.close()
+		return render_template("addlesson.html", pattern_name=name[0])
+
 
 @app.route("/listassets")
 @login_required
@@ -653,6 +714,56 @@ def setcustomfile(date):
 		db.close()
 	return render_template("setcustomfile.html", ringtones=ringtones, schedule=schedule, customfiles=customfiles)
 
+@app.route("/viewmusic/<string:date>")
+@login_required
+@permission_required("setmusic")
+def viewmusic(date):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	blocks = cursor.execute("SELECT id, start, end FROM schedule WHERE schedule_type = 3 AND pattern_id = (SELECT pattern_id FROM dates WHERE date = ?)", (date, )).fetchall()
+	music = []
+	times = []
+	for block in blocks:
+		music.append(cursor.execute("SELECT customsounds.id, filepath, length FROM customsounds INNER JOIN assets ON customsounds.asset_id = assets.id WHERE schedule_id = ? AND date = ? ORDER BY params", (block[0], date)).fetchall())
+		timesum = cursor.execute("SELECT SUM(length) FROM assets INNER JOIN customsounds ON customsounds.asset_id = assets.id WHERE schedule_id = ? AND date = ? ORDER BY params", (block[0], date)).fetchone()[0]
+		if timesum is None:
+			timesum = 0
+		times.append(int((datetime.strptime(block[2], "%H:%M")-datetime.strptime(block[1], "%H:%M")).total_seconds()) - timesum)
+	db.close()
+	return render_template("music.html", blocks=enumerate(blocks), music=music, date=date, times=times)
+
+@app.route("/viewmusic/<string:date>/add/<int:schedule_id>", methods=("GET", "POST"))
+@login_required
+@permission_required("setmusic")
+def addmusic(date, schedule_id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	if request.method == "POST":
+		params = cursor.execute("SELECT MAX(params) FROM customsounds WHERE date = ? AND schedule_id = ?", (date, schedule_id)).fetchone()
+		param = 0
+		if params[0] != None:
+			param = int(params[0])+1
+		cursor.execute("INSERT INTO customsounds(asset_id, date, schedule_id, params) VALUES (?, ?, ?, ?)", (request.form.get("file"), date, schedule_id, param))
+		db.commit()
+		db.close()
+		flash("Zene sikeresen hozzáadva!", "success")
+		return redirect(url_for("viewmusic", date=date))
+	files = cursor.execute("SELECT id, filepath FROM assets WHERE asset_type = 2").fetchall()
+	db.close()
+	return render_template("addmusic.html", files=files)
+
+@app.route("/viewmusic/<string:date>/delete/<int:id>")
+@login_required
+@permission_required("setmusic")
+def deletemusic(id, date):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	cursor.execute("DELETE FROM customsounds WHERE id = ?", (id, ))
+	db.commit()
+	db.close()
+	flash("Sikeres törlés!", "success")
+	return redirect(url_for("viewmusic", date=date))
+
 @app.route("/listplaybacks")
 @login_required
 @permission_required("playbacks")
@@ -805,15 +916,28 @@ while True:
 	if lastloaded != datetime.now().day:
 		loadTodaysProgramme()
 	for event in events:
-		if event.time.hour == datetime.now().hour and event.time.minute == datetime.now().minute:
-			if event.type == 1 and bellEnabled == False:
+		if event.time.hour == datetime.now().hour and event.time.minute == datetime.now().minute and isinstance(event, (SoundEvent, MusicEvent)):
+			if isinstance(event, MusicEvent) and musicEnabled == False:
 				events.remove(event)
 				continue
-			if event.type == 2 and customplaybackEnabled == False:
-				events.remove(event)
+			if isinstance(event, MusicEvent) and (pygame.mixer.Channel(1).get_busy() == True or pygame.mixer.Channel(0).get_busy() == True):
 				continue
-			if event.type == 1 and pygame.mixer.Channel(1).get_busy() == True:
-				continue
+			if not isinstance(event, MusicEvent):
+				if event.type == 1 and bellEnabled == False:
+					events.remove(event)
+					continue
+				if event.type == 2 and customplaybackEnabled == False:
+					events.remove(event)
+					continue
+				if event.type == 1 and pygame.mixer.Channel(1).get_busy() == True:
+					continue
 			event.play()
 			events.remove(event)
+		if datetime.now().time().replace(microsecond=0) == event.time.time() and isinstance(event, MusicFadeEvent):
+			event.play()
+			events.remove(event)
+	if pygame.mixer.music.get_busy():
+		if musicpos > pygame.mixer.music.get_pos() and music != []:
+			pygame.mixer.music.queue(music.pop())
+		musicpos = pygame.mixer.music.get_pos()
 	sleep(0.2)
