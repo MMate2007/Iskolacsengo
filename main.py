@@ -22,8 +22,7 @@ app = Flask(__name__)
 app.secret_key = "valami"
 loginmanager = LoginManager()
 loginmanager.init_app(app)
-pygame.mixer.pre_init(buffer=2048, channels=4)
-pygame.init()
+pygame.mixer.init(buffer=2048, channels=4)
 alsamixer = alsaaudio.Mixer()
 with open("settings.json") as f:
 		settings = json.load(f)
@@ -36,6 +35,7 @@ bellEnabled = True
 customplaybackEnabled = True
 musicEnabled = True
 music = []
+musicpos = 0
 
 class SoundEvent():
 	def __init__(self, time, sound, type):
@@ -55,11 +55,11 @@ class MusicEvent():
 		self.sound = "Zene"
 
 	def play(self):
-		global music
+		global music, musicpos
 		music = self.music
 		pygame.mixer.music.load(music.pop())
-		pygame.mixer.music.set_endevent(pygame.USEREVENT+1)
 		pygame.mixer.music.play()
+		musicpos = pygame.mixer.music.get_pos()
 		if music != []:
 			pygame.mixer.music.queue(music.pop())
 
@@ -931,7 +931,8 @@ while True:
 		if datetime.now().time().replace(microsecond=0) == event.time.time() and isinstance(event, MusicFadeEvent):
 			event.play()
 			events.remove(event)
-	for event in pygame.event.get():
-		if event.type == pygame.USEREVENT+1 and music != []:
+	if pygame.mixer.music.get_busy():
+		if musicpos > pygame.mixer.music.get_pos() and music != []:
 			pygame.mixer.music.queue(music.pop())
+		musicpos = pygame.mixer.music.get_pos()
 	sleep(0.2)
