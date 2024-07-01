@@ -722,10 +722,16 @@ def viewmusic(date):
 	cursor = db.cursor()
 	blocks = cursor.execute("SELECT id, start, end FROM schedule WHERE schedule_type = 3 AND pattern_id = (SELECT pattern_id FROM dates WHERE date = ?)", (date, )).fetchall()
 	music = []
+	times = []
 	for block in blocks:
-		music.append(cursor.execute("SELECT customsounds.id, filepath FROM customsounds INNER JOIN assets ON customsounds.asset_id = assets.id WHERE schedule_id = ? AND date = ? ORDER BY params", (block[0], date)).fetchall())
+		music.append(cursor.execute("SELECT customsounds.id, filepath, length FROM customsounds INNER JOIN assets ON customsounds.asset_id = assets.id WHERE schedule_id = ? AND date = ? ORDER BY params", (block[0], date)).fetchall())
+		timesum = cursor.execute("SELECT SUM(length) FROM assets INNER JOIN customsounds ON customsounds.asset_id = assets.id WHERE schedule_id = ? AND date = ? ORDER BY params", (block[0], date)).fetchone()[0]
+		if timesum is None:
+			timesum = 0
+		totalsec = int((datetime.strptime(block[2], "%H:%M")-datetime.strptime(block[1], "%H:%M")).total_seconds())
+		times.append([totalsec, totalsec - timesum])
 	db.close()
-	return render_template("music.html", blocks=enumerate(blocks), music=music, date=date)
+	return render_template("music.html", blocks=enumerate(blocks), music=music, date=date, times=times)
 
 @app.route("/viewmusic/<string:date>/add/<int:schedule_id>", methods=("GET", "POST"))
 @login_required
