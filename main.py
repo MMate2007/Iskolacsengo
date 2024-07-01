@@ -728,8 +728,7 @@ def viewmusic(date):
 		timesum = cursor.execute("SELECT SUM(length) FROM assets INNER JOIN customsounds ON customsounds.asset_id = assets.id WHERE schedule_id = ? AND date = ? ORDER BY params", (block[0], date)).fetchone()[0]
 		if timesum is None:
 			timesum = 0
-		totalsec = int((datetime.strptime(block[2], "%H:%M")-datetime.strptime(block[1], "%H:%M")).total_seconds())
-		times.append([totalsec, totalsec - timesum])
+		times.append(int((datetime.strptime(block[2], "%H:%M")-datetime.strptime(block[1], "%H:%M")).total_seconds()) - timesum)
 	db.close()
 	return render_template("music.html", blocks=enumerate(blocks), music=music, date=date, times=times)
 

@@ -9,7 +9,6 @@
             <thead>
                 <tr>
                     <th>Idő</th>
-                    <th></th>
                     <th>Hangfájlok</th>
                 </tr>
             </thead>
@@ -19,20 +18,19 @@
                     <td>
                         {{ block[1] }} - {{ block[2] }}
                     </td>
-                    <td>{{ times[id][0] }} másodperc</td>
                     <td>
                         <span style="color: 
-                        {% if times[id][1] > 15 %}
+                        {% if times[id] > 15 %}
                         green
-                        {% elif times[id][1] > 0 %}
+                        {% elif times[id] > 0 %}
                         orange
                         {% else %}
                         red
                         {% endif %}
                         ;">
-                        Még {{ times[id][1] }} másodperc.
+                        Még {{ times[id] }} másodperc.
                         </span>
-                        {% if times[id][1] > 0 %}
+                        {% if times[id] > 0 %}
                         <a href="{{ url_for('addmusic', date=date, schedule_id=block[0]) }}" class="btn btn-primary" role="button" style="float: right;"><i class="bi bi-plus-lg"></i> Zene hozzáadása</a>
                         {% else %}
                         <a href="{{ url_for('addmusic', date=date, schedule_id=block[0]) }}" class="btn btn-primary disabled" role="button" style="float: right;" aria-disabled="true"><i class="bi bi-plus-lg"></i> Zene hozzáadása</a>
