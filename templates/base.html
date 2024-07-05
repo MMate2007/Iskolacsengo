@@ -15,7 +15,7 @@
 	{% block customstyle %} {% endblock %}
     </style>
 </head>
-<body>
+<body class="d-flex flex-column">
     <header>
         <nav class="navbar navbar-expand-md bg-primary">
             <div class="container-fluid">
@@ -77,5 +77,8 @@
 	{% endwith %}
     </div>
     <main class="container">{% block content %} {% endblock %}</main>
+    <footer style="background-color: white;" class="text-center footer mt-auto py-3">
+        {% block footer %}{% endblock %}
+    </footer>
 </body>
 </html>
