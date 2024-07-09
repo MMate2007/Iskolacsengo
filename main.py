@@ -380,7 +380,7 @@ def dates():
 def viewdates():
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	results = cursor.execute("SELECT date, friendlyname, EXISTS(SELECT 1 FROM customsounds INNER JOIN schedule ON customsounds.schedule_id = schedule.id WHERE customsounds.date = dates.date AND schedule.schedule_type != 3), EXISTS(SELECT 1 FROM customsounds INNER JOIN schedule ON customsounds.schedule_id = schedule.id WHERE customsounds.date = dates.date AND schedule.schedule_type = 3), EXISTS(SELECT 1 FROM playbacks WHERE playbacks.date = dates.date) FROM dates INNER JOIN patterns ON dates.pattern_id = patterns.id ORDER BY date").fetchall()
+	results = cursor.execute("SELECT date, friendlyname, EXISTS(SELECT 1 FROM customsounds INNER JOIN schedule ON customsounds.schedule_id = schedule.id WHERE customsounds.date = dates.date AND schedule.schedule_type != 3), EXISTS(SELECT 1 FROM customsounds INNER JOIN schedule ON customsounds.schedule_id = schedule.id WHERE customsounds.date = dates.date AND schedule.schedule_type = 3), EXISTS(SELECT 1 FROM playbacks WHERE playbacks.date = dates.date), EXISTS(SELECT 1 FROM schedule WHERE schedule_type = 3 AND schedule.pattern_id = patterns.id) FROM dates INNER JOIN patterns ON dates.pattern_id = patterns.id ORDER BY date").fetchall()
 	db.close()
 	return render_template("viewdates.html", dates=results)
 
