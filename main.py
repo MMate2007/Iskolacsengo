@@ -435,6 +435,7 @@ def listpatterns():
 def deletepattern(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
+	cursor.execute("DELETE FROM customsounds WHERE date in (SELECT date FROM dates WHERE pattern_id = ?)", (id, ))
 	cursor.execute("DELETE FROM patterns WHERE id = ?", (id,))
 	cursor.execute("DELETE FROM schedule WHERE pattern_id = ?", (id, ))
 	cursor.execute("DELETE FROM dates WHERE pattern_id = ?", (id, ))
