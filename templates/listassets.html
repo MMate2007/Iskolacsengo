@@ -34,8 +34,21 @@
                     {% if current_user.haspermission("previewfiles") %}
                     <a href="{{ url_for('playasset', id=ringtone[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
                     {% endif %}
-                    <a href="{{ url_for('normalise', id=ringtone[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-soundwave"></i> Normalizálás</a>
-                    <a href="{{ url_for('converttomono', id=ringtone[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Monósítás</a>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#manipulate-ringtone-{{ ringtone[0] }}"><i class="bi bi-soundwave"></i> Manipulálás</button>
+                    <div class="modal fade" id="manipulate-ringtone-{{ ringtone[0] }}" tabindex="-1" aria-labelledby="manipulate-ringtone-{{ ringtone[0] }}-label" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="manipulate-ringtone-{{ ringtone[0] }}-label">{{ ringtone[1] }} manipulálása</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <a href="{{ url_for('normalise', id=ringtone[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-soundwave"></i> Normalizálás</a>
+                                    <a href="{{ url_for('converttomono', id=ringtone[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Monósítás</a>                
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=ringtone[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
                 </td>
             </tr>
@@ -68,8 +81,21 @@
                     {% if current_user.haspermission("previewfiles") %}
                     <a href="{{ url_for('playasset', id=music[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
                     {% endif %}
-                    <a href="{{ url_for('normalise', id=music[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-soundwave"></i> Normalizálás</a>
-                    <a href="{{ url_for('converttomono', id=music[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Monósítás</a>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#manipulate-music-{{ music[0] }}"><i class="bi bi-soundwave"></i> Manipulálás</button>
+                    <div class="modal fade" id="manipulate-music-{{ music[0] }}" tabindex="-1" aria-labelledby="manipulate-music-{{ music[0] }}-label" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="manipulate-music-{{ music[0] }}-label">{{ music[1] }} manipulálása</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <a href="{{ url_for('normalise', id=music[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-soundwave"></i> Normalizálás</a>
+                                    <a href="{{ url_for('converttomono', id=music[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Monósítás</a>                
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=music[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
                 </td>
             </tr>
@@ -102,8 +128,21 @@
                     {% if current_user.haspermission("previewfiles") %}
                     <a href="{{ url_for('playasset', id=file[0]) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás</a>
                     {% endif %}
-                    <a href="{{ url_for('normalise', id=file[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-soundwave"></i> Normalizálás</a>
-                    <a href="{{ url_for('converttomono', id=file[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Monósítás</a>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#manipulate-file-{{ file[0] }}"><i class="bi bi-soundwave"></i> Manipulálás</button>
+                    <div class="modal fade" id="manipulate-file-{{ file[0] }}" tabindex="-1" aria-labelledby="manipulate-file-{{ file[0] }}-label" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="manipulate-file-{{ file[0] }}-label">{{ file[1] }} manipulálása</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <a href="{{ url_for('normalise', id=file[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-soundwave"></i> Normalizálás</a>
+                                    <a href="{{ url_for('converttomono', id=file[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Monósítás</a>                
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <a class="btn btn-danger" role="button" href="{{ url_for('deleteasset', id=file[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
                 </td>
             </tr>
