@@ -44,7 +44,9 @@
                                 </div>
                                 <div class="modal-body">
                                     <a href="{{ url_for('normalise', id=ringtone[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-soundwave"></i> Normalizálás</a>
-                                    <a href="{{ url_for('converttomono', id=ringtone[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Monósítás</a>                
+                                    <a href="{{ url_for('converttomono', id=ringtone[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Monósítás</a>
+                                    <a href="{{ url_for('pan', id=ringtone[0]) }}?pan=-1" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Panorámázás a bal oldalra</a>
+                                    <a href="{{ url_for('pan', id=ringtone[0]) }}?pan=1" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Panorámázás a jobb oldalra</a>
                                 </div>
                             </div>
                         </div>
@@ -91,7 +93,9 @@
                                 </div>
                                 <div class="modal-body">
                                     <a href="{{ url_for('normalise', id=music[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-soundwave"></i> Normalizálás</a>
-                                    <a href="{{ url_for('converttomono', id=music[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Monósítás</a>                
+                                    <a href="{{ url_for('converttomono', id=music[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Monósítás</a>
+                                    <a href="{{ url_for('pan', id=music[0]) }}?pan=-1" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Panorámázás a bal oldalra</a>
+                                    <a href="{{ url_for('pan', id=music[0]) }}?pan=1" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Panorámázás a jobb oldalra</a>
                                 </div>
                             </div>
                         </div>
@@ -138,7 +142,9 @@
                                 </div>
                                 <div class="modal-body">
                                     <a href="{{ url_for('normalise', id=file[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-soundwave"></i> Normalizálás</a>
-                                    <a href="{{ url_for('converttomono', id=file[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Monósítás</a>                
+                                    <a href="{{ url_for('converttomono', id=file[0]) }}" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Monósítás</a>
+                                    <a href="{{ url_for('pan', id=file[0]) }}?pan=-1" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Panorámázás a bal oldalra</a>
+                                    <a href="{{ url_for('pan', id=file[0]) }}?pan=1" class="btn btn-outline-primary" role="button"><i class="bi bi-speaker"></i> Panorámázás a jobb oldalra</a>
                                 </div>
                             </div>
                         </div>

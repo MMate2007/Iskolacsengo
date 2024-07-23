@@ -579,6 +579,28 @@ def converttomono(id):
 	flash("Sikeres monósítás!", "success")
 	return redirect(url_for("listassets"))
 
+@app.route("/audio/<int:id>/pan")
+@login_required
+def pan(id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	result = cursor.execute("SELECT filepath, asset_type FROM assets WHERE id = ?", (id,)).fetchone()
+	ftype = result[1]
+	if not current_user.haspermission('ringtones') and ftype == 1:
+		flash("Nincs jogosultsága csengőhang panorámázásához!", "danger")
+		return redirect(url_for("listassets"))
+	if not current_user.haspermission("music") and ftype == 2:
+		flash("Nincs jogosultsága zene panorámázásához!", "danger")
+		return redirect(url_for("listassets"))
+	if not current_user.haspermission("files") and ftype == 3:
+		flash("Nincs jogosultsága egyéb fájlok panorámázásához!", "danger")
+		return redirect(url_for("listassets"))
+	sound = AudioSegment.from_file(result[0])
+	sound = sound.pan(float(request.args.get("pan")))
+	sound.export(result[0])
+	flash("Sikeres panorámázás!", "success")
+	return redirect(url_for("listassets"))
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in allowedfiles
