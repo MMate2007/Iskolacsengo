@@ -90,8 +90,6 @@ def export(filename = "iskolacsengo-export"+datetime.now().strftime("%Y%m%d-%H%M
     if savetofile == True:
         with open(filepath+"/"+filename, "x") as f:
             json.dump(exporteddata, f)
-        return filepath+filename
+        return filepath+"/"+filename
     elif savetofile == False:
         return exporteddata
-    
-export()
