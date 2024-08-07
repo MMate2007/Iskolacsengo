@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from os import path
 
-def export(filename = "iskolacsengo-export"+datetime.now().strftime("%Y%m%d-%H%I%S")+".json", savetofile = True, filepath = path.dirname(path.realpath(__file__))):
+def export(filename = "iskolacsengo-export"+datetime.now().strftime("%Y%m%d-%H%M%S")+".json", savetofile = True, filepath = path.dirname(path.realpath(__file__))):
     exporteddata = {}
     with open("settings.json") as s:
         exporteddata["settings"] = json.load(s)
@@ -85,13 +85,7 @@ def export(filename = "iskolacsengo-export"+datetime.now().strftime("%Y%m%d-%H%I
         exporteddata["users"]["users"].append(entry)
     
     tabledatas = cursor.execute("SELECT friendlyname FROM permissions").fetchall()
-    table_columns = [desc[0] for desc in cursor.description]
-    exporteddata["users"]["permissions"] = []
-    for tabledata in tabledatas:
-        entry = {}
-        for id, column in enumerate(table_columns):
-            entry[column] = tabledata[id]
-        exporteddata["users"]["permissions"].append(entry)
+    exporteddata["users"]["permissions"] = [tabledata[0] for tabledata in tabledatas]
     db.close()
     if savetofile == True:
         with open(filepath+"/"+filename, "x") as f:
