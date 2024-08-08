@@ -152,11 +152,13 @@ def importfromfile(file):
                     sql += ")"
                     parameters = []
                     for column in columns:
+                        if database == "users" and table == "users" and column == "password":
+                            entry[column] = entry[column].encode("utf-8")
                         parameters.append(entry[column])
                     cursor.execute(sql, tuple(parameters))
 
                     if database == "users" and table == "users":
-                        user_id = cursor.execute("SELECT id FROM users WHERE username = ?", (entry["username"], )).fetchall()
+                        user_id = cursor.execute("SELECT id FROM users WHERE username = ?", (entry["username"], )).fetchall()[0]
                         dbpermissions = cursor.execute("SELECT id, friendlyname FROM permissions").fetchall()
                         for permission in dbpermissions:
                             try:
