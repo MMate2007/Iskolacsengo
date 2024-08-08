@@ -134,6 +134,8 @@ def importfromfile(file):
                 
                 if database == "users" and table == "users":
                     cursor.execute("DELETE FROM users;")
+                if database == "users" and table == "userpermissions":
+                    cursor.execute("DELETE FROM userpermissions;")
                 
                 cursor.execute("SELECT * FROM "+table)
                 columns = [desc[0] for desc in cursor.description]
