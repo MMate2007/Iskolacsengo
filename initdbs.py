@@ -59,7 +59,8 @@ permissions = [["reload", "Programok újratöltése"],
 	       		["changevolume", "Hangerő módosítása"],
 				["announce", "Bemondás"],
 				["setmusic", "Zenék beállítása napokra"],
-				["disablemusic", "Zene letiltása"]
+				["disablemusic", "Zene letiltása"],
+				["update", "Frissítés"]
 				]
 for permission in permissions:
 	userscursor.execute("INSERT INTO permissions (friendlyname, humanname) VALUES (?, ?)", (permission[0],permission[1]))
