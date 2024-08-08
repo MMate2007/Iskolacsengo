@@ -132,6 +132,9 @@ def importfromfile(file):
                 if database == "users" and table == "permissions":
                         continue
                 
+                if database == "users" and table == "users":
+                    cursor.execute("DELETE FROM users;")
+                
                 cursor.execute("SELECT * FROM "+table)
                 columns = [desc[0] for desc in cursor.description]
                 for column in columns:
