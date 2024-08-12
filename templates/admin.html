@@ -13,6 +13,27 @@
 {% if current_user.haspermission('shutdown') %}
 <a href="{{ url_for('shutdown') }}" class="btn btn-danger" role="button"><i class="bi bi-toggle-off"></i> Leállítás</a>
 {% endif %}
+{% if current_user.haspermission('update') %}
+<script>
+    function update() {
+        document.querySelector("#updatebuttonicon").style.display = "none";
+        document.querySelector("#updatebuttonspinner").style.display = "inline-block";
+        document.querySelector("#updatebutton").disabled = true;
+        const update = new XMLHttpRequest();
+        update.open("GET", "update");
+        update.send();
+        const checkifdone = new XMLHttpRequest();
+        checkifdone.open("GET", "/", false);
+        checkifdone.send();
+        window.location.href = "/";
+    }
+</script>
+<button class="btn btn-danger" id="updatebutton" onclick="update()">
+    <i class="bi bi-arrow-clockwise" id="updatebuttonicon"></i>
+    <span class="spinner-border spinner-border-sm" aria-hidden="true" id="updatebuttonspinner" style="display: none;"></span>
+    Frissítés
+</button>
+{% endif %}
 {% if current_user.haspermission('disablebell') %}
 {% if bellEnabled %}
 <a href="{{ url_for('changeBellStatus') }}" class="btn btn-danger" role="button"><i class="bi bi-bell-slash"></i> Csengetés letiltása</a>
