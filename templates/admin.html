@@ -25,7 +25,7 @@
         const checkifdone = new XMLHttpRequest();
         checkifdone.open("GET", "/", false);
         checkifdone.send();
-        window.location.href = "/";
+        window.location.replace = "/";
     }
 </script>
 <button class="btn btn-danger" id="updatebutton" onclick="update()">
