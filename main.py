@@ -274,7 +274,7 @@ def shutdown():
 	os.system("sudo shutdown now")
 	return redirect(url_for("admin"))
 
-@app.route("/update")
+@app.route("/update", methods=("POST", ))
 @login_required
 @permission_required("update")
 def update():
@@ -284,7 +284,8 @@ def update():
 	result = cursor.execute("SELECT username FROM users WHERE id = ?", (current_user.id,)).fetchone()
 	db.close()
 	export(result[0], "updateexport.json")
-	os.system("python updatehelper.py")
+	password = str(request.form.get("password"))
+	os.system("echo "+password+" | sudo -S python updatehelper.py")
 	return redirect(url_for("home"))
 
 @app.route("/changeBellStatus")

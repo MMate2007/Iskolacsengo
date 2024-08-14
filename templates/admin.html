@@ -15,24 +15,47 @@
 {% endif %}
 {% if current_user.haspermission('update') %}
 <script>
-    function update() {
+    function update(password) {
         document.querySelector("#updatebuttonicon").style.display = "none";
         document.querySelector("#updatebuttonspinner").style.display = "inline-block";
         document.querySelector("#updatebutton").disabled = true;
         const update = new XMLHttpRequest();
-        update.open("GET", "update");
-        update.send();
+        update.open("POST", "update");
+        update.send("password="+password);
         const checkifdone = new XMLHttpRequest();
         checkifdone.open("GET", "/", false);
         checkifdone.send();
         window.location.replace = "/";
     }
 </script>
-<button class="btn btn-danger" id="updatebutton" onclick="update()">
+<button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#updateModal" id="updatebutton">
     <i class="bi bi-arrow-clockwise" id="updatebuttonicon"></i>
     <span class="spinner-border spinner-border-sm" aria-hidden="true" id="updatebuttonspinner" style="display: none;"></span>
     Frissítés
 </button>
+<div class="modal fade" id="updateModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title" id="modalLabel">
+                    A frissítéshez szükséges a sudo jelszó megadása
+                </h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Ahhoz, hogy a rendszer önállóan le tudja állítani az Iskolacsengő szoftverét, majd a frissítés után azt újra elindíthassa, szükséges a sudo jelszó megadása.
+                </p>
+                <form action="#" id="sudopassword">
+                    <input type="password" name="sudo" id="sudo" class="form-control" placeholder="Sudo jelszó">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="update(document.querySelector('#sudo').value)">Frissítés megkezdése</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endif %}
 {% if current_user.haspermission('disablebell') %}
 {% if bellEnabled %}
