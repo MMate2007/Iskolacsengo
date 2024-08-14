@@ -26,6 +26,8 @@
         checkifdone.open("GET", "/", false);
         checkifdone.send();
         window.location.href = "/";
+        location.reload();
+        return false;
     }
 </script>
 <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#updateModal" id="updatebutton">
