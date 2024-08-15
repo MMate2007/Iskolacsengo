@@ -274,20 +274,6 @@ def shutdown():
 	os.system("sudo shutdown now")
 	return redirect(url_for("admin"))
 
-@app.route("/update", methods=("POST", ))
-@login_required
-@permission_required("update")
-def update():
-	from imexport import export
-	db = sqlite3.connect(settings["usersDb"])
-	cursor = db.cursor()
-	result = cursor.execute("SELECT username FROM users WHERE id = ?", (current_user.id,)).fetchone()
-	db.close()
-	export(result[0], "updateexport.json")
-	password = str(request.form.get("password"))
-	os.system("echo "+password+" | sudo -S python updatehelper.py")
-	return redirect(url_for("home"))
-
 @app.route("/changeBellStatus")
 @login_required
 @permission_required("disablebell")
