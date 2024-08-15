@@ -3,8 +3,23 @@ import json
 import bcrypt
 from os import makedirs, path, getcwd
 from json import dump
-with open("settings.json") as s:
-	settings = json.load(s)
+settings = {
+	'programmesDb': "programmes.db",
+	'usersDb': "users.db",
+	'classStartAssetId': None,
+	'classEndReminderAssetId': None,
+	'classEndReminderMin': 5,
+	'classEndAssetId': None,
+	'uploadFolder': None,
+	'musicFadeOut': 5
+}
+try:
+	with open("settings.json") as s:
+		settingsfromfile = json.load(s)
+		for key, value in settingsfromfile.items():
+			settings[key] = value
+except FileNotFoundError:
+	pass
 if settings["uploadFolder"] is None:
 	settings["uploadFolder"] = getcwd()+"/assets"
 	with open("settings.json", "w") as f:
@@ -55,4 +70,3 @@ for result in results:
 	userscursor.execute("INSERT INTO userpermissions (user_id, permission_id) VALUES (?, ?)", (adminid[0], result[0]))
 usersdb.commit()
 usersdb.close()
-print("Ready.")
