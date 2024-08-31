@@ -100,25 +100,28 @@ def loadTodaysProgramme():
 	results = loadcursor.execute("SELECT schedule_type, start, end, id, asset_id FROM schedule WHERE pattern_id = ? ORDER BY start, schedule_type", (patternid,)).fetchall()
 	for result in results:
 		if result[0] == 1:
-			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 1", (result[3], )).fetchone()
-			if customfileresult is None:
-				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classStartAssetId"],)).fetchone()
-			else:
-				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1))
-			if settings["classEndReminderMin"] != 0:
-				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 2", (result[3], )).fetchone()
+			if settings["classStartAssetId"] is not None:
+				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 1", (result[3], )).fetchone()
 				if customfileresult is None:
-					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classEndReminderAssetId"],)).fetchone()
+					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classStartAssetId"],)).fetchone()
 				else:
 					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-				events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], 1))
-			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 3", (result[3], )).fetchone()
-			if customfileresult is None:
-				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classEndAssetId"],)).fetchone()
-			else:
-				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M"), assetresult[0], 1))
+				events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1))
+			if settings["classEndReminderMin"] != 0:
+				if settings["classEndReminderAssetId"] is not None:
+					customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 2", (result[3], )).fetchone()
+					if customfileresult is None:
+						assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classEndReminderAssetId"],)).fetchone()
+					else:
+						assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
+					events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], 1))
+			if settings["classEndAssetId"] is not None:
+				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 3", (result[3], )).fetchone()
+				if customfileresult is None:
+					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classEndAssetId"],)).fetchone()
+				else:
+					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
+				events.append(SoundEvent(datetime.strptime(result[2], "%H:%M"), assetresult[0], 1))
 		if result[0] == 2:
 			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ?", (result[3], )).fetchone()
 			if customfileresult is None:
@@ -916,11 +919,13 @@ def deleteuser(id):
 def settings():
 	if request.method == "POST":
 		for setting in list(settings.keys()):
-			if request.form.get(setting) is not None:
+			if request.form.get(setting) is not None and request.form.get(setting) != "":
 				if request.form.get(setting).isdigit():
 					settings[setting] = int(request.form.get(setting))
 				else:
 					settings[setting] = request.form.get(setting)
+			else:
+				settings[setting] = None
 		with open("settings.json", "w") as f:
 			json.dump(settings, f)
 		flash("Sikeres módosítás!", "success")

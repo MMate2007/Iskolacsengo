@@ -6,10 +6,14 @@ from json import dump
 settings = {
 	'programmesDb': "programmes.db",
 	'usersDb': "users.db",
+	'devicesDb': "devices.db",
 	'classStartAssetId': None,
+	'classStartRingpatternId': None,
 	'classEndReminderAssetId': None,
+	'classEndReminderRingpatternId': None,
 	'classEndReminderMin': 5,
 	'classEndAssetId': None,
+	'classEndRingpatternId': None,
 	'uploadFolder': None,
 	'musicFadeOut': 5
 }
@@ -33,6 +37,13 @@ with open("programmedbschema.sql") as f:
 	programmescursor.executescript(f.read())
 programmesdb.commit()
 programmesdb.close()
+
+devicesdb = sqlite3.connect(settings["devicesDb"])
+devicescursor = devicesdb.cursor()
+with open("devicedbschema.sql") as f:
+	devicescursor.executescript(f.read())
+devicesdb.commit()
+devicesdb.close()
 
 usersdb = sqlite3.connect(settings["usersDb"])
 userscursor = usersdb.cursor()
@@ -59,7 +70,9 @@ permissions = [["reload", "Programok újratöltése"],
 	       		["changevolume", "Hangerő módosítása"],
 				["announce", "Bemondás"],
 				["setmusic", "Zenék beállítása napokra"],
-				["disablemusic", "Zene letiltása"]
+				["disablemusic", "Zene letiltása"],
+				["devices", "Eszközök hozzáadása, törlése"],
+				["ringpatterns", "Fizikai csengetési minták létrehozása, módosítása és törlése"]
 				]
 for permission in permissions:
 	userscursor.execute("INSERT INTO permissions (friendlyname, humanname) VALUES (?, ?)", (permission[0],permission[1]))

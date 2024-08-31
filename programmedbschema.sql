@@ -40,3 +40,17 @@ CREATE TABLE playbacks (
 	date DATE NOT NULL,
 	time TIME NOT NULL
 );
+DROP TABLE IF EXISTS ring_patterns;
+CREATE TABLE ring_patterns (
+	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	friendlyname TEXT UNIQUE,
+	description TEXT
+);
+DROP TABLE IF EXISTS ring_schedules;
+CREATE TABLE ring_schedules (
+	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	pattern_id INTEGER NOT NULL,
+	type BOOLEAN,
+	device_id INTEGER,
+	time_to_wait REAL
+);

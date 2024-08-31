@@ -17,6 +17,7 @@
     <div class="mb-3">
         <label for="classStartAssetId" class="form-label">Becsengetéskor lejátszandó fájl:</label>
         <select name="classStartAssetId" id="classStartAssetId" class="form-select">
+            <option value="">Ne legyen bejátszás</option>
             {% for ringtone in ringtones %}
                 <option value="{{ ringtone[0] }}" {{ 'selected' if ringtone[0] == settings['classStartAssetId'] }}>{{ ringtone[1] }}</option>
             {% endfor %}
@@ -25,6 +26,7 @@
     <div class="mb-3">
         <label for="classEndReminderAssetId" class="form-label">Jelzőcsengetéskor lejátszandó fájl:</label>
         <select name="classEndReminderAssetId" id="classEndReminderAssetId" class="form-select">
+            <option value="">Ne legyen bejátszás</option>
             {% for ringtone in ringtones %}
                 <option value="{{ ringtone[0] }}" {{ 'selected' if ringtone[0] == settings['classEndReminderAssetId'] }}>{{ ringtone[1] }}</option>
             {% endfor %}
@@ -37,6 +39,7 @@
     <div class="mb-3">
         <label for="classEndAssetId" class="form-label">Kicsengetéskor lejátszandó fájl:</label>
         <select name="classEndAssetId" id="classEndAssetId" class="form-select">
+            <option value="">Ne legyen bejátszás</option>
             {% for ringtone in ringtones %}
                 <option value="{{ ringtone[0] }}" {{ 'selected' if ringtone[0] == settings['classEndAssetId'] }}>{{ ringtone[1] }}</option>
             {% endfor %}
