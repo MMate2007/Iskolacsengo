@@ -75,8 +75,14 @@ class MusicFadeEvent():
 		pygame.mixer.music.unload()
 
 class OutputEvent():
-	def __init__(self, time, commands, name):
+	def __init__(self, time, patternid):
+		global settings
 		self.time = time
+		db = sqlite3.connect(settings["programmesDb"])
+		cursor = db.cursor()
+		name = cursor.execute("SELECT friendlyname FROM ring_patterns WHERE id = ?", (patternid,)).fetchone()[0]
+		commands = cursor.execute("SELECT schedule_type, device_id, time_to_wait FROM ring_schedule WHERE pattern_id = ?", (patternid, )).fetchall()
+		db.close()
 		self.sound = name
 		self.thread = threading.Thread(target=lambda: self.run(commands))
 		self.thread.daemon = True
@@ -86,9 +92,9 @@ class OutputEvent():
 
 	def run(self, commands):
 		for command in commands:
-			if command[0] is not None:
+			if command[0] < 2:
 				devices[command[1]].value = command[0]
-			else:
+			elif command[0] == 2:
 				sleep(command[2])
 
 def readSettings():
@@ -129,6 +135,8 @@ def loadTodaysProgramme():
 	results = loadcursor.execute("SELECT schedule_type, start, end, id, asset_id FROM schedule WHERE pattern_id = ? ORDER BY start, schedule_type", (patternid,)).fetchall()
 	for result in results:
 		if result[0] == 1:
+			if settings["classStartRingpatternId"] is not None:
+				events.append(OutputEvent(datetime.strptime(result[1], "%H:%M"), settings["classStartRingpatternId"]))
 			if settings["classStartAssetId"] is not None:
 				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 1", (result[3], )).fetchone()
 				if customfileresult is None:
@@ -137,6 +145,8 @@ def loadTodaysProgramme():
 					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
 				events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1))
 			if settings["classEndReminderMin"] != 0:
+				if settings["classEndReminderRingpatternId"] is not None:
+					events.append(OutputEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), settings["classEndReminderRingpatternId"]))
 				if settings["classEndReminderAssetId"] is not None:
 					customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 2", (result[3], )).fetchone()
 					if customfileresult is None:
@@ -144,6 +154,8 @@ def loadTodaysProgramme():
 					else:
 						assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
 					events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], 1))
+			if settings["classEndRingpatternId"] is not None:
+				events.append(OutputEvent(datetime.strptime(result[2], "%H:%M"), settings["classEndRingpatternId"]))
 			if settings["classEndAssetId"] is not None:
 				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 3", (result[3], )).fetchone()
 				if customfileresult is None:
@@ -166,6 +178,9 @@ def loadTodaysProgramme():
 					music.append(entry[0])
 				events.append(MusicEvent(datetime.strptime(result[1], "%H:%M"), music))
 				events.append(MusicFadeEvent(datetime.strptime(result[2], "%H:%M")-timedelta(seconds=settings["musicFadeOut"]), settings["musicFadeOut"]))
+		if result[0] == 4:
+			events.append(OutputEvent(datetime.strptime(result[1], "%H:%M"), result[4]))
+
 	loaddb.close()
 
 class User():
@@ -482,7 +497,7 @@ def deletepattern(id):
 def viewschedule(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	results = cursor.execute("SELECT schedule.id, schedule_type, start, end, filepath FROM schedule LEFT OUTER JOIN assets ON schedule.asset_id = assets.id WHERE pattern_id = ? ORDER BY start, schedule_type", (id,)).fetchall()
+	results = cursor.execute("SELECT schedule.id, schedule_type, start, end, filepath, (SELECT friendlyname FROM ring_patterns WHERE ring_patterns.id = asset_id) FROM schedule LEFT OUTER JOIN assets ON schedule.asset_id = assets.id WHERE pattern_id = ? ORDER BY start, schedule_type", (id,)).fetchall()
 	name = cursor.execute("SELECT friendlyname FROM patterns WHERE id = ?", (id,)).fetchone()
 	db.close()
 	return render_template("viewschedule.html", schedule=results, pattern_name=name[0], patternid=id)

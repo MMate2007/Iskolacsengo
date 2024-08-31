@@ -39,8 +39,10 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if event[4] != None %}
+                    {% if event[4] != None and event[1] != 4%}
                     {{ event[4] }}
+                    {% elif event[1] == 4 %}
+                    {{ event[5] }}
                     {% else %}
                     -
                     {% endif %}
