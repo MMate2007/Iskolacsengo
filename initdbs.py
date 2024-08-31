@@ -26,10 +26,10 @@ except FileNotFoundError:
 	pass
 if settings["uploadFolder"] is None:
 	settings["uploadFolder"] = getcwd()+"/assets"
-	with open("settings.json", "w") as f:
-		json.dump(settings, f)
 if not path.isdir(settings["uploadFolder"]):
 	makedirs(settings["uploadFolder"])
+with open("settings.json", "w") as f:
+	json.dump(settings, f)
 
 programmesdb = sqlite3.connect(settings["programmesDb"])
 programmescursor = programmesdb.cursor()
