@@ -59,7 +59,7 @@ DROP TABLE IF EXISTS ring_schedule;
 CREATE TABLE ring_schedule (
 	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	pattern_id INTEGER NOT NULL,
-	schedule_type BOOLEAN,
+	schedule_type INTEGER NOT NULL,
 	device_id INTEGER,
 	time_to_wait REAL
 );

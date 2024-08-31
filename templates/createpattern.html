@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 {% block customstyle %}
 {% endblock %}
-{% block title %}Csengetési rend létrehozása{% endblock %}
-{% block headtitle %}Csengetési rend létrehozása{% endblock %}
+{% block title %}Csengetési {% if type == 1 %} rend {% else %} dallam {% endif %}létrehozása{% endblock %}
+{% block headtitle %}Csengetési {% if type == 1 %} rend {% else %} dallam {% endif %}létrehozása{% endblock %}
 {% block content %}
 
 <form method="post" action="#">

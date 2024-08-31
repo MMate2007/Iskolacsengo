@@ -48,6 +48,36 @@
         </div>
     </fieldset>
     <fieldset>
+        <legend>Fizikai csengetési beállítások</legend>
+        <div class="mb-3">
+            <label for="classStartRingpatternId" class="form-label">Becsengetéskor lejátszandó dallam:</label>
+            <select name="classStartRingpatternId" id="classStartRingpatternId" class="form-select">
+                <option value="">Ne legyen bejátszás</option>
+                {% for ringpattern in ringpatterns %}
+                    <option value="{{ ringpattern[0] }}" {{ 'selected' if ringpattern[0] == settings['classStartRingpatternId'] }}>{{ ringpattern[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="classEndReminderRingpatternId" class="form-label">Jelzőcsengetéskor lejátszandó dallam:</label>
+            <select name="classEndReminderRingpatternId" id="classEndReminderRingpatternId" class="form-select">
+                <option value="">Ne legyen bejátszás</option>
+                {% for ringpattern in ringpatterns %}
+                    <option value="{{ ringpattern[0] }}" {{ 'selected' if ringpattern[0] == settings['classEndReminderRingpatternId'] }}>{{ ringpattern[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="classEndRingpatternId" class="form-label">Kicsengetéskor lejátszandó dallam:</label>
+            <select name="classEndRingpatternId" id="classEndRingpatternId" class="form-select">
+                <option value="">Ne legyen bejátszás</option>
+                {% for ringpattern in ringpatterns %}
+                    <option value="{{ ringpattern[0] }}" {{ 'selected' if ringpattern[0] == settings['classEndRingpatternId'] }}>{{ ringpattern[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </fieldset>
+    <fieldset>
         <legend>Adatbázisok</legend>
         <div class="mb-3">
             <label for="programmesDb" class="form-label">Programok adatbázisa:</label>

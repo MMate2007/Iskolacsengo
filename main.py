@@ -100,7 +100,7 @@ def readSettings():
 def loadDevices():
 	global devices
 	devices = {}
-	db = sqlite3.connect(settings["devicesDb"])
+	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
 	deviceslist = cursor.execute("SELECT id, pin, device_type, pull_up FROM devices").fetchall()
 	for device in deviceslist:
@@ -449,7 +449,7 @@ def createpattern():
 		result = cursor.execute("SELECT id FROM patterns WHERE friendlyname = ?", (name,)).fetchone()
 		db.close()
 		return redirect(url_for("viewschedule", id=result[0]))
-	return render_template("createpattern.html")
+	return render_template("createpattern.html", type=1)
 
 @app.route("/listpatterns")
 @login_required
@@ -459,7 +459,7 @@ def listpatterns():
 	cursor = db.cursor()
 	patterns = cursor.execute("SELECT * FROM patterns ORDER BY friendlyname").fetchall()
 	db.close()
-	return render_template("listpatterns.html", patterns=patterns)
+	return render_template("listpatterns.html", patterns=patterns, type=1)
 
 @app.route("/deletepattern/<int:id>")
 @login_required
@@ -544,7 +544,22 @@ def addevent(patternid, eventtype):
 			db.commit()
 			flash("Zenei blokk sikeresen hozzáadva a csengetési rendhez!", "success")
 			db.close()
-		return render_template("addlesson.html", pattern_name=name[0])
+	elif eventtype == 4:
+		if request.method == "POST":
+			time = request.form.get("time")
+			assetid = request.form.get("asset")
+			db = sqlite3.connect(settings["programmesDb"])
+			cursor = db.cursor()
+			cursor.execute("INSERT INTO schedule (pattern_id, schedule_type, start, asset_id) VALUES (?,4,?,?)", (patternid,time,assetid))
+			db.commit()
+			flash("Fizikai csengetés sikeresen hozzáadva a csengetési rendhez!", "success")
+			db.close()
+		db = sqlite3.connect(settings["programmesDb"])
+		cursor = db.cursor()
+		ringtones = cursor.execute("SELECT id, friendlyname FROM ring_patterns").fetchall()
+		db.close()
+		return render_template("addring.html", pattern_name=name[0], ringtones=ringtones)
+	return render_template("addlesson.html", pattern_name=name[0])
 
 
 @app.route("/listassets")
@@ -961,14 +976,15 @@ def settings():
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
 	ringtones = cursor.execute("SELECT id, filepath FROM assets WHERE asset_type = 1").fetchall()
+	ringpatterns = cursor.execute("SELECT id, friendlyname FROM ring_patterns").fetchall()
 	db.close()
-	return render_template("settings.html", ringtones=ringtones, settings=settings)
+	return render_template("settings.html", ringtones=ringtones, settings=settings, ringpatterns=ringpatterns)
 
 @app.route("/devices")
 @login_required
 @permission_required("devices")
 def devices():
-	db = sqlite3.connect(settings["devicesDb"])
+	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
 	devices = cursor.execute("SELECT id, pin, device_type, pull_up, friendlyname FROM devices").fetchall()
 	db.close()
@@ -979,15 +995,11 @@ def devices():
 @permission_required("devices")
 def deletedevice(id):
 	global devices
-	db = sqlite3.connect(settings["devicesDb"])
+	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
 	device_type = cursor.execute("SELECT device_type FROM devices WHERE id = ?", (id, )).fetchone()
 	if device_type == 1:
-		programmesdb = sqlite3.connect(settings["programmesDb"])
-		programmesdbcursor = programmesdb.cursor()
-		programmesdbcursor.execute("DELETE FROM ring_schedules WHERE device_id = ?", (id, ))
-		programmesdb.commit()
-		programmesdb.close()
+		cursor.execute("DELETE FROM ring_schedules WHERE device_id = ?", (id, ))
 	cursor.execute("DELETE FROM devices WHERE id = ?", (id, ))
 	devices.pop(id)
 	db.commit()
@@ -1001,7 +1013,7 @@ def deletedevice(id):
 def adddevice(device_type):
 	global devices
 	if request.method == "POST":
-		db = sqlite3.connect(settings["devicesDb"])
+		db = sqlite3.connect(settings["programmesDb"])
 		cursor = db.cursor()
 	if device_type == "ring":
 		if request.method == "POST":
@@ -1012,6 +1024,109 @@ def adddevice(device_type):
 			devices[id] = DigitalOutputDevice(request.form.get("pin"))
 			flash("Eszköz hozzáadása sikeres!", "success")
 		return render_template("addphysicalring.html")
+	
+@app.route("/ring-patterns")
+@login_required
+@permission_required("ringpatterns")
+def listringpatterns():
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	patterns = cursor.execute("SELECT * FROM ring_patterns ORDER BY friendlyname").fetchall()
+	db.close()
+	return render_template("listpatterns.html", patterns=patterns, type=2)
+
+@app.route("/ring-patterns/add", methods=("GET", "POST"))
+@login_required
+@permission_required("ringpatterns")
+def createringpattern():
+	if request.method == "POST":
+		name = request.form.get("name")
+		description = request.form.get("description")
+		db = sqlite3.connect(settings["programmesDb"])
+		cursor = db.cursor()
+		try:
+			cursor.execute("INSERT INTO ring_patterns (friendlyname, description) VALUES (?,?)", (name,description))
+			db.commit()
+		except sqlite3.IntegrityError:
+			flash("Már létezik egy "+name+" nevű csengetési dallam!", "danger")
+			db.close()
+			return redirect(url_for("createringpattern"))
+		flash("Csengetési dallam sikeresen létrehozva!", "success")
+		result = cursor.execute("SELECT id FROM ring_patterns WHERE friendlyname = ?", (name,)).fetchone()
+		db.close()
+		return redirect(url_for("viewringpattern", id=result[0]))
+	return render_template("createpattern.html", type=2)
+
+@app.route("/ring-patterns/<int:id>")
+@login_required
+@permission_required("ringpatterns")
+def viewringpattern(id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	results = cursor.execute("SELECT ring_schedule.id, schedule_type, devices.friendlyname, time_to_wait FROM ring_schedule LEFT OUTER JOIN devices ON ring_schedule.device_id = devices.id WHERE pattern_id = ? ORDER BY ring_schedule.id", (id,)).fetchall()
+	name = cursor.execute("SELECT friendlyname FROM ring_patterns WHERE id = ?", (id,)).fetchone()
+	db.close()
+	return render_template("viewringschedule.html", schedule=results, pattern_name=name[0], patternid=id)
+
+@app.route("/ring-patterns/<int:patternid>/add/<int:eventtype>", methods=("GET", "POST"))
+@login_required
+@permission_required("ringpatterns")
+def addringevent(patternid, eventtype):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	name = cursor.execute("SELECT friendlyname FROM ring_patterns WHERE id = ?", (patternid,)).fetchone()
+	devices = cursor.execute('SELECT id, friendlyname FROM devices WHERE device_type = 1').fetchall()
+	if eventtype == 1:
+		if request.method == "POST":
+			cursor.execute("INSERT INTO ring_schedule (pattern_id, schedule_type, device_id) VALUES (?, ?, ?)", (patternid, request.form.get("switch"), request.form.get("device")))
+			db.commit()
+			db.close()
+			flash("Sikeres hozzáadás!", "success")
+			return redirect(url_for("viewringpattern", id=patternid))
+		return render_template("addringswitch.html", pattern_name=name[0], devices=devices)
+	if eventtype == 2:
+		if request.method == "POST":
+			cursor.execute("INSERT INTO ring_schedule (pattern_id, schedule_type, time_to_wait) VALUES (?, 2, ?)", (patternid, request.form.get("time")))
+			db.commit()
+			db.close()
+			flash("Sikeres hozzáadás!", "success")
+			return redirect(url_for("viewringpattern", id=patternid))
+		return render_template("addringwait.html", pattern_name=name[0], devices=devices)
+
+@app.route("/ring-patterns/<int:patternid>/delete/<int:id>")
+@login_required
+@permission_required("ringpatterns")
+def deleteringevent(patternid, id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	cursor.execute("DELETE FROM ring_schedule WHERE id = ?", (id,))
+	db.commit()
+	flash("Csengetési dallam esemény sikeresen törölve!", "success")
+	db.close()
+	return redirect(url_for("viewringpattern", id=patternid))
+
+@app.route("/ring-patterns/<int:id>/delete")
+@login_required
+@permission_required("ringpatterns")
+def deleteringpattern(id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	cursor.execute("DELETE FROM schedule WHERE asset_id = ? AND schedule_type = 4", (id, ))
+	cursor.execute("DELETE FROM ring_patterns WHERE id = ?", (id,))
+	cursor.execute("DELETE FROM ring_schedule WHERE pattern_id = ?", (id, ))
+	if settings["classStartRingpatternId"] == id:
+		settings["classStartRingpatternId"] = None
+	if settings["classEndReminderRingpatternId"] == id:
+		settings["classEndReminderRingpatternId"] = None
+	if settings["classEndRingpatternId"] == id:
+		settings["classEndRingpatternId"] = None
+	db.commit()
+	with open("settings.json", "w") as f:
+			json.dump(settings, f)
+	flash("Csengetési dallam sikeresen törölve!", "success")
+	db.close()
+	return redirect(url_for("listringpatterns"))
+
 
 readSettings()
 loadDevices()

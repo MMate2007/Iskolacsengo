@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}{{ pattern_name }} - Csengetési dallam megtekintése{% endblock %}
+{% block headtitle %}{{ pattern_name }} - Csengetési dallam megtekintése{% endblock %}
+{% block content %}
+<a href="{{ url_for('addringevent', patternid=patternid, eventtype=1) }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Kapcsolás hozzáadása</a>
+<a href="{{ url_for('addringevent', patternid=patternid, eventtype=2) }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Szünet hozzáadása</a>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Típus</th>
+                <th>Érték</th>
+                <th>Műveletek</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in schedule %}
+            <tr>
+                <td>
+                    {% if event[1] == 0 %}
+                        kikapcsolás
+                    {% elif event[1] == 1 %}
+                        bekapcsolás
+                    {% elif event[1] == 2 %}
+                        szünet
+                    {% endif %}
+                </td>
+                <td>
+                    {% if event[1] == 2 %}
+                    {{ event[3] }}
+                    {% else %}
+                    {{ event[2] }}
+                    {% endif %}
+                </td>
+                <td>
+                    <a class="btn btn-danger" role="button" href="{{ url_for('deleteringevent', id=event[0], patternid=patternid) }}"><i class="bi bi-trash"></i> Törlés</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
