@@ -1154,13 +1154,16 @@ while True:
 	if lastloaded != time.day:
 		loadTodaysProgramme()
 	for event in events:
-		if event.time.hour == time.hour and event.time.minute == time.minute and isinstance(event, (SoundEvent, MusicEvent)):
+		if event.time.hour == time.hour and event.time.minute == time.minute and isinstance(event, (SoundEvent, MusicEvent, OutputEvent)):
 			if isinstance(event, MusicEvent) and musicEnabled == False:
 				events.remove(event)
 				continue
 			if isinstance(event, MusicEvent) and (pygame.mixer.Channel(1).get_busy() == True or pygame.mixer.Channel(0).get_busy() == True):
 				continue
-			if not isinstance(event, MusicEvent):
+			if isinstance(event, OutputEvent) and bellEnabled == False:
+				events.remove(event)
+				continue
+			if not isinstance(event, (MusicEvent, OutputEvent)):
 				if event.type == 1 and bellEnabled == False:
 					events.remove(event)
 					continue
