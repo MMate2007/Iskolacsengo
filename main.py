@@ -13,7 +13,7 @@ import threading
 from math import ceil
 from functools import wraps
 import alsaaudio
-from gpiozero import CPUTemperature, DiskUsage, LoadAverage
+from gpiozero import CPUTemperature, DiskUsage, LoadAverage, DigitalOutputDevice
 from pydub import AudioSegment, effects
 
 allowedfiles = ["wav", "mp3", "ogg", "m4a"]
@@ -36,6 +36,7 @@ customplaybackEnabled = True
 musicEnabled = True
 music = []
 musicpos = 0
+devices = {}
 
 class SoundEvent():
 	def __init__(self, time, sound, type):
@@ -73,11 +74,39 @@ class MusicFadeEvent():
 		pygame.mixer.music.fadeout(self.fade*1000)
 		pygame.mixer.music.unload()
 
+class OutputEvent():
+	def __init__(self, time, commands, name):
+		self.time = time
+		self.sound = name
+		self.thread = threading.Thread(target=lambda: self.run(commands))
+		self.thread.daemon = True
+
+	def play(self):
+		self.thread.start()
+
+	def run(self, commands):
+		for command in commands:
+			if command[0] is not None:
+				devices[command[1]].value = command[0]
+			else:
+				sleep(command[2])
+
 def readSettings():
 	global settings
 	settings = []
 	with open("settings.json") as f:
 		settings = json.load(f)
+
+def loadDevices():
+	global devices
+	devices = {}
+	db = sqlite3.connect(settings["devicesDb"])
+	cursor = db.cursor()
+	deviceslist = cursor.execute("SELECT id, pin, device_type, pull_up FROM devices").fetchall()
+	for device in deviceslist:
+		if device[2] == 1:
+			devices[device[0]] = DigitalOutputDevice(device[1])
+	db.close()
 
 def loadTodaysProgramme():
 	global events, lastloaded, settings
@@ -935,7 +964,57 @@ def settings():
 	db.close()
 	return render_template("settings.html", ringtones=ringtones, settings=settings)
 
+@app.route("/devices")
+@login_required
+@permission_required("devices")
+def devices():
+	db = sqlite3.connect(settings["devicesDb"])
+	cursor = db.cursor()
+	devices = cursor.execute("SELECT id, pin, device_type, pull_up, friendlyname FROM devices").fetchall()
+	db.close()
+	return render_template("devices.html", devices=devices)
+
+@app.route("/devices/delete/<int:id>")
+@login_required
+@permission_required("devices")
+def deletedevice(id):
+	global devices
+	db = sqlite3.connect(settings["devicesDb"])
+	cursor = db.cursor()
+	device_type = cursor.execute("SELECT device_type FROM devices WHERE id = ?", (id, )).fetchone()
+	if device_type == 1:
+		programmesdb = sqlite3.connect(settings["programmesDb"])
+		programmesdbcursor = programmesdb.cursor()
+		programmesdbcursor.execute("DELETE FROM ring_schedules WHERE device_id = ?", (id, ))
+		programmesdb.commit()
+		programmesdb.close()
+	cursor.execute("DELETE FROM devices WHERE id = ?", (id, ))
+	devices.pop(id)
+	db.commit()
+	db.close()
+	flash("Eszköz törlése sikerült!", "success")
+	return redirect(url_for("devices"))
+
+@app.route("/devices/add/<device_type>", methods=("GET", "POST"))
+@login_required
+@permission_required("devices")
+def adddevice(device_type):
+	global devices
+	if request.method == "POST":
+		db = sqlite3.connect(settings["devicesDb"])
+		cursor = db.cursor()
+	if device_type == "ring":
+		if request.method == "POST":
+			cursor.execute("INSERT INTO devices (friendlyname, pin, input, device_type) VALUES (?, ?, 0, 1)", (request.form.get("name"), request.form.get("pin")))
+			db.commit()
+			id = cursor.execute("SELECT id FROM devices WHERE friendlyname = ?", (request.form.get("name"), )).fetchone()[0]
+			db.close()
+			devices[id] = DigitalOutputDevice(request.form.get("pin"))
+			flash("Eszköz hozzáadása sikeres!", "success")
+		return render_template("addphysicalring.html")
+
 readSettings()
+loadDevices()
 loadTodaysProgramme()
 thread = threading.Thread(target=lambda: app.run(debug=True, host="0.0.0.0", use_reloader=False))
 thread.daemon = True

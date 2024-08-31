@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}Külső eszközök{% endblock %}
+{% block headtitle %}Külső eszközök{% endblock %}
+{% block content %}
+<a href="{{ url_for('adddevice', device_type='ring') }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Fizikai csengő hozzáadása</a>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Név</th>
+                <th>Típus</th>
+                <th>Tüske</th>
+                <th>Ellenállás</th>
+                <th>Műveletek</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for device in devices %}
+            <tr>
+                <td>
+                    {{ device[4] }}
+                </td>
+                <td>
+                    {% if device[2] == 1 %}
+                    fizikai csengő
+                    {% endif %}
+                </td>
+                <td>
+                    {{ device[1] }}
+                </td>
+                <td>
+                    {% if device[3] == 1 %}
+                    felfelé
+                    {% elif device[3] == 0 %}
+                    lefelé
+                    {% else %}
+                    nincs
+                    {% endif %} 
+                </td>
+                <td>
+                    <a class="btn btn-danger" role="button" href="{{ url_for('deletedevice', id=device[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
