@@ -51,6 +51,11 @@
                             <a href="{{ url_for('listusers') }}" class="nav-link">Felhasználók</a>
                         </li>
                         {% endif %}
+                        {% if current_user.haspermission("devices") %}
+                        <li class="nav-item">
+                            <a href="{{ url_for('devices') }}" class="nav-link">Eszközök</a>
+                        </li>
+                        {% endif %}
                         {% if current_user.haspermission("editsettings") %}
                         <li class="nav-item">
                             <a href="{{ url_for('settings') }}" class="nav-link">Beállítások</a>
