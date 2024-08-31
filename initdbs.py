@@ -6,7 +6,6 @@ from json import dump
 settings = {
 	'programmesDb': "programmes.db",
 	'usersDb': "users.db",
-	'devicesDb': "devices.db",
 	'classStartAssetId': None,
 	'classStartRingpatternId': None,
 	'classEndReminderAssetId': None,
@@ -37,13 +36,6 @@ with open("programmedbschema.sql") as f:
 	programmescursor.executescript(f.read())
 programmesdb.commit()
 programmesdb.close()
-
-devicesdb = sqlite3.connect(settings["devicesDb"])
-devicescursor = devicesdb.cursor()
-with open("devicedbschema.sql") as f:
-	devicescursor.executescript(f.read())
-devicesdb.commit()
-devicesdb.close()
 
 usersdb = sqlite3.connect(settings["usersDb"])
 userscursor = usersdb.cursor()
