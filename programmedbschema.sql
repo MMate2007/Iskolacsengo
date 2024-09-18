@@ -40,3 +40,26 @@ CREATE TABLE playbacks (
 	date DATE NOT NULL,
 	time TIME NOT NULL
 );
+DROP TABLE IF EXISTS devices;
+CREATE TABLE devices (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    friendlyname TEXT NOT NULL UNIQUE,
+    pin INTEGER NOT NULL UNIQUE,
+    input BOOLEAN NOT NULL,
+    device_type INTEGER NOT NULL,
+    pull_up BOOLEAN
+);
+DROP TABLE IF EXISTS ring_patterns;
+CREATE TABLE ring_patterns (
+	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	friendlyname TEXT UNIQUE,
+	description TEXT
+);
+DROP TABLE IF EXISTS ring_schedule;
+CREATE TABLE ring_schedule (
+	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	pattern_id INTEGER NOT NULL,
+	schedule_type INTEGER NOT NULL,
+	device_id INTEGER,
+	time_to_wait REAL
+);

@@ -120,55 +120,58 @@ def importfromfile(file):
             if key[-2:] == "Db":
                 dbs.append(key[:-2])
         for database in dbs:
-            db = sqlite3.connect(importdata["settings"][database+"Db"])
+            db = sqlite3.connect(settings[database+"Db"])
             cursor = db.cursor()
-            tables = [t for t in importdata[database]]
-            for table in tables:
-                if table not in [t[0] for t in cursor.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]:
-                    continue
-                if importdata[database][table] == []:
-                    continue
-
-                if database == "users" and table == "permissions":
+            try:
+                tables = [t for t in importdata[database]]
+                for table in tables:
+                    if table not in [t[0] for t in cursor.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]:
                         continue
-                
-                if database == "users" and table == "users":
-                    cursor.execute("DELETE FROM users;")
-                if database == "users" and table == "userpermissions":
-                    cursor.execute("DELETE FROM userpermissions;")
-                
-                cursor.execute("SELECT * FROM "+table)
-                columns = [desc[0] for desc in cursor.description]
-                for column in columns:
-                    if column not in importdata[database][table][0]:
-                        columns.remove(column)
-                for entry in importdata[database][table]:
-                    sql = "INSERT INTO "+table+" ("
-                    for column in columns:
-                        sql += column+", "
-                    sql = sql[:-2]
-                    sql += ") VALUES ("
-                    for column in columns:
-                        sql += "?,"
-                    sql = sql[:-1]
-                    sql += ")"
-                    parameters = []
-                    for column in columns:
-                        if database == "users" and table == "users" and column == "password":
-                            entry[column] = entry[column].encode("utf-8")
-                        parameters.append(entry[column])
-                    cursor.execute(sql, tuple(parameters))
+                    if importdata[database][table] == []:
+                        continue
 
+                    if database == "users" and table == "permissions":
+                            continue
+                    
                     if database == "users" and table == "users":
-                        user_id = cursor.execute("SELECT id FROM users WHERE username = ?", (entry["username"], )).fetchall()[0]
-                        dbpermissions = cursor.execute("SELECT id, friendlyname FROM permissions").fetchall()
-                        for permission in dbpermissions:
-                            try:
-                                if permission[1] not in importdata["users"]["permissions"] and importdata["exportuser"] == entry["username"]:
+                        cursor.execute("DELETE FROM users;")
+                    if database == "users" and table == "userpermissions":
+                        cursor.execute("DELETE FROM userpermissions;")
+                    
+                    cursor.execute("SELECT * FROM "+table)
+                    columns = [desc[0] for desc in cursor.description]
+                    for column in columns:
+                        if column not in importdata[database][table][0]:
+                            columns.remove(column)
+                    for entry in importdata[database][table]:
+                        sql = "INSERT INTO "+table+" ("
+                        for column in columns:
+                            sql += column+", "
+                        sql = sql[:-2]
+                        sql += ") VALUES ("
+                        for column in columns:
+                            sql += "?,"
+                        sql = sql[:-1]
+                        sql += ")"
+                        parameters = []
+                        for column in columns:
+                            if database == "users" and table == "users" and column == "password":
+                                entry[column] = entry[column].encode("utf-8")
+                            parameters.append(entry[column])
+                        cursor.execute(sql, tuple(parameters))
+
+                        if database == "users" and table == "users":
+                            user_id = cursor.execute("SELECT id FROM users WHERE username = ?", (entry["username"], )).fetchall()[0]
+                            dbpermissions = cursor.execute("SELECT id, friendlyname FROM permissions").fetchall()
+                            for permission in dbpermissions:
+                                try:
+                                    if permission[1] not in importdata["users"]["permissions"] and importdata["exportuser"] == entry["username"]:
+                                        cursor.execute("INSERT INTO userpermissions (user_id, permission_id) VALUES (?,?)", (user_id[0], permission[0]))
+                                except KeyError:
+                                    pass
+                                if permission[1] in entry["permissions"]:
                                     cursor.execute("INSERT INTO userpermissions (user_id, permission_id) VALUES (?,?)", (user_id[0], permission[0]))
-                            except KeyError:
-                                pass
-                            if permission[1] in entry["permissions"]:
-                                cursor.execute("INSERT INTO userpermissions (user_id, permission_id) VALUES (?,?)", (user_id[0], permission[0]))
+            except KeyError:
+                pass
             db.commit()
             db.close()

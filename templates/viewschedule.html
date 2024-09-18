@@ -7,6 +7,7 @@
 <a href="{{ url_for('addevent', patternid=patternid, eventtype=1) }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Tanóra hozzáadása</a>
 <a href="{{ url_for('addevent', patternid=patternid, eventtype=2) }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Csengetés hozzáadása</a>
 <a href="{{ url_for('addevent', patternid=patternid, eventtype=3) }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Zenei blokk hozzáadása</a>
+<a href="{{ url_for('addevent', patternid=patternid, eventtype=4) }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Fizikai csengetés hozzáadása</a>
 <div class="table-responsive">
     <table class="table">
         <thead>
@@ -27,6 +28,8 @@
                         csengetés
                     {% elif event[1] == 3 %}
                         zene
+                    {% elif event[1] == 4 %}
+                        fizikai csengetés
                     {% endif %}
                 </td>
                 <td>
@@ -36,8 +39,10 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if event[4] != None %}
+                    {% if event[4] != None and event[1] != 4%}
                     {{ event[4] }}
+                    {% elif event[1] == 4 %}
+                    {{ event[5] }}
                     {% else %}
                     -
                     {% endif %}

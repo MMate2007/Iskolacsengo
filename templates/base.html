@@ -41,6 +41,11 @@
                             <a href="{{ url_for('listplaybacks') }}" class="nav-link">Csengetési renden kívüli bejátszások</a>
                         </li>
                         {% endif %}
+                        {% if current_user.haspermission("ringpatterns") %}
+                        <li class="nav-item">
+                            <a href="{{ url_for('listringpatterns') }}" class="nav-link">Csengetési dallamok</a>
+                        </li>
+                        {% endif %}
                         {% if current_user.haspermission("ringtones") or current_user.haspermission("music") or current_user.haspermission("files") %}
                         <li class="nav-item">
                             <a href="{{ url_for('listassets') }}" class="nav-link">Fájlok</a>
@@ -49,6 +54,11 @@
                         {% if current_user.haspermission("listusers") %}
                         <li class="nav-item">
                             <a href="{{ url_for('listusers') }}" class="nav-link">Felhasználók</a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.haspermission("devices") %}
+                        <li class="nav-item">
+                            <a href="{{ url_for('devices') }}" class="nav-link">Eszközök</a>
                         </li>
                         {% endif %}
                         {% if current_user.haspermission("editsettings") %}

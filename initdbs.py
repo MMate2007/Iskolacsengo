@@ -7,9 +7,12 @@ settings = {
 	'programmesDb': "programmes.db",
 	'usersDb': "users.db",
 	'classStartAssetId': None,
+	'classStartRingpatternId': None,
 	'classEndReminderAssetId': None,
+	'classEndReminderRingpatternId': None,
 	'classEndReminderMin': 5,
 	'classEndAssetId': None,
+	'classEndRingpatternId': None,
 	'uploadFolder': None,
 	'musicFadeOut': 5
 }
@@ -22,10 +25,10 @@ except FileNotFoundError:
 	pass
 if settings["uploadFolder"] is None:
 	settings["uploadFolder"] = getcwd()+"/assets"
-	with open("settings.json", "w") as f:
-		json.dump(settings, f)
 if not path.isdir(settings["uploadFolder"]):
 	makedirs(settings["uploadFolder"])
+with open("settings.json", "w") as f:
+	json.dump(settings, f)
 
 programmesdb = sqlite3.connect(settings["programmesDb"])
 programmescursor = programmesdb.cursor()
@@ -59,7 +62,9 @@ permissions = [["reload", "Programok újratöltése"],
 	       		["changevolume", "Hangerő módosítása"],
 				["announce", "Bemondás"],
 				["setmusic", "Zenék beállítása napokra"],
-				["disablemusic", "Zene letiltása"]
+				["disablemusic", "Zene letiltása"],
+				["devices", "Eszközök hozzáadása, törlése"],
+				["ringpatterns", "Fizikai csengetési minták létrehozása, módosítása és törlése"]
 				]
 for permission in permissions:
 	userscursor.execute("INSERT INTO permissions (friendlyname, humanname) VALUES (?, ?)", (permission[0],permission[1]))

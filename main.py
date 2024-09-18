@@ -13,7 +13,7 @@ import threading
 from math import ceil
 from functools import wraps
 import alsaaudio
-from gpiozero import CPUTemperature, DiskUsage, LoadAverage
+from gpiozero import CPUTemperature, DiskUsage, LoadAverage, DigitalOutputDevice
 from pydub import AudioSegment, effects
 
 allowedfiles = ["wav", "mp3", "ogg", "m4a"]
@@ -36,6 +36,7 @@ customplaybackEnabled = True
 musicEnabled = True
 music = []
 musicpos = 0
+devices = {}
 
 class SoundEvent():
 	def __init__(self, time, sound, type):
@@ -73,11 +74,45 @@ class MusicFadeEvent():
 		pygame.mixer.music.fadeout(self.fade*1000)
 		pygame.mixer.music.unload()
 
+class OutputEvent():
+	def __init__(self, time, patternid):
+		global settings
+		self.time = time
+		db = sqlite3.connect(settings["programmesDb"])
+		cursor = db.cursor()
+		name = cursor.execute("SELECT friendlyname FROM ring_patterns WHERE id = ?", (patternid,)).fetchone()[0]
+		commands = cursor.execute("SELECT schedule_type, device_id, time_to_wait FROM ring_schedule WHERE pattern_id = ?", (patternid, )).fetchall()
+		db.close()
+		self.sound = name
+		self.thread = threading.Thread(target=lambda: self.run(commands))
+		self.thread.daemon = True
+
+	def play(self):
+		self.thread.start()
+
+	def run(self, commands):
+		for command in commands:
+			if command[0] < 2:
+				devices[command[1]].value = command[0]
+			elif command[0] == 2:
+				sleep(command[2])
+
 def readSettings():
 	global settings
 	settings = []
 	with open("settings.json") as f:
 		settings = json.load(f)
+
+def loadDevices():
+	global devices
+	devices = {}
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	deviceslist = cursor.execute("SELECT id, pin, device_type, pull_up FROM devices").fetchall()
+	for device in deviceslist:
+		if device[2] == 1:
+			devices[device[0]] = DigitalOutputDevice(device[1])
+	db.close()
 
 def loadTodaysProgramme():
 	global events, lastloaded, settings
@@ -100,25 +135,34 @@ def loadTodaysProgramme():
 	results = loadcursor.execute("SELECT schedule_type, start, end, id, asset_id FROM schedule WHERE pattern_id = ? ORDER BY start, schedule_type", (patternid,)).fetchall()
 	for result in results:
 		if result[0] == 1:
-			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 1", (result[3], )).fetchone()
-			if customfileresult is None:
-				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classStartAssetId"],)).fetchone()
-			else:
-				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1))
-			if settings["classEndReminderMin"] != 0:
-				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 2", (result[3], )).fetchone()
+			if settings["classStartRingpatternId"] is not None:
+				events.append(OutputEvent(datetime.strptime(result[1], "%H:%M"), settings["classStartRingpatternId"]))
+			if settings["classStartAssetId"] is not None:
+				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 1", (result[3], )).fetchone()
 				if customfileresult is None:
-					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classEndReminderAssetId"],)).fetchone()
+					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classStartAssetId"],)).fetchone()
 				else:
 					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-				events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], 1))
-			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 3", (result[3], )).fetchone()
-			if customfileresult is None:
-				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classEndAssetId"],)).fetchone()
-			else:
-				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
-			events.append(SoundEvent(datetime.strptime(result[2], "%H:%M"), assetresult[0], 1))
+				events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1))
+			if settings["classEndReminderMin"] != 0:
+				if settings["classEndReminderRingpatternId"] is not None:
+					events.append(OutputEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), settings["classEndReminderRingpatternId"]))
+				if settings["classEndReminderAssetId"] is not None:
+					customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 2", (result[3], )).fetchone()
+					if customfileresult is None:
+						assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classEndReminderAssetId"],)).fetchone()
+					else:
+						assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
+					events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], 1))
+			if settings["classEndRingpatternId"] is not None:
+				events.append(OutputEvent(datetime.strptime(result[2], "%H:%M"), settings["classEndRingpatternId"]))
+			if settings["classEndAssetId"] is not None:
+				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 3", (result[3], )).fetchone()
+				if customfileresult is None:
+					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classEndAssetId"],)).fetchone()
+				else:
+					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
+				events.append(SoundEvent(datetime.strptime(result[2], "%H:%M"), assetresult[0], 1))
 		if result[0] == 2:
 			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ?", (result[3], )).fetchone()
 			if customfileresult is None:
@@ -134,6 +178,9 @@ def loadTodaysProgramme():
 					music.append(entry[0])
 				events.append(MusicEvent(datetime.strptime(result[1], "%H:%M"), music))
 				events.append(MusicFadeEvent(datetime.strptime(result[2], "%H:%M")-timedelta(seconds=settings["musicFadeOut"]), settings["musicFadeOut"]))
+		if result[0] == 4:
+			events.append(OutputEvent(datetime.strptime(result[1], "%H:%M"), result[4]))
+
 	loaddb.close()
 
 class User():
@@ -417,7 +464,7 @@ def createpattern():
 		result = cursor.execute("SELECT id FROM patterns WHERE friendlyname = ?", (name,)).fetchone()
 		db.close()
 		return redirect(url_for("viewschedule", id=result[0]))
-	return render_template("createpattern.html")
+	return render_template("createpattern.html", type=1)
 
 @app.route("/listpatterns")
 @login_required
@@ -427,7 +474,7 @@ def listpatterns():
 	cursor = db.cursor()
 	patterns = cursor.execute("SELECT * FROM patterns ORDER BY friendlyname").fetchall()
 	db.close()
-	return render_template("listpatterns.html", patterns=patterns)
+	return render_template("listpatterns.html", patterns=patterns, type=1)
 
 @app.route("/deletepattern/<int:id>")
 @login_required
@@ -450,7 +497,7 @@ def deletepattern(id):
 def viewschedule(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	results = cursor.execute("SELECT schedule.id, schedule_type, start, end, filepath FROM schedule LEFT OUTER JOIN assets ON schedule.asset_id = assets.id WHERE pattern_id = ? ORDER BY start, schedule_type", (id,)).fetchall()
+	results = cursor.execute("SELECT schedule.id, schedule_type, start, end, filepath, (SELECT friendlyname FROM ring_patterns WHERE ring_patterns.id = asset_id) FROM schedule LEFT OUTER JOIN assets ON schedule.asset_id = assets.id WHERE pattern_id = ? ORDER BY start, schedule_type", (id,)).fetchall()
 	name = cursor.execute("SELECT friendlyname FROM patterns WHERE id = ?", (id,)).fetchone()
 	db.close()
 	return render_template("viewschedule.html", schedule=results, pattern_name=name[0], patternid=id)
@@ -512,7 +559,22 @@ def addevent(patternid, eventtype):
 			db.commit()
 			flash("Zenei blokk sikeresen hozzáadva a csengetési rendhez!", "success")
 			db.close()
-		return render_template("addlesson.html", pattern_name=name[0])
+	elif eventtype == 4:
+		if request.method == "POST":
+			time = request.form.get("time")
+			assetid = request.form.get("asset")
+			db = sqlite3.connect(settings["programmesDb"])
+			cursor = db.cursor()
+			cursor.execute("INSERT INTO schedule (pattern_id, schedule_type, start, asset_id) VALUES (?,4,?,?)", (patternid,time,assetid))
+			db.commit()
+			flash("Fizikai csengetés sikeresen hozzáadva a csengetési rendhez!", "success")
+			db.close()
+		db = sqlite3.connect(settings["programmesDb"])
+		cursor = db.cursor()
+		ringtones = cursor.execute("SELECT id, friendlyname FROM ring_patterns").fetchall()
+		db.close()
+		return render_template("addring.html", pattern_name=name[0], ringtones=ringtones)
+	return render_template("addlesson.html", pattern_name=name[0])
 
 
 @app.route("/listassets")
@@ -916,21 +978,173 @@ def deleteuser(id):
 def settings():
 	if request.method == "POST":
 		for setting in list(settings.keys()):
-			if request.form.get(setting) is not None:
+			if request.form.get(setting) is not None and request.form.get(setting) != "":
 				if request.form.get(setting).isdigit():
 					settings[setting] = int(request.form.get(setting))
 				else:
 					settings[setting] = request.form.get(setting)
+			else:
+				settings[setting] = None
 		with open("settings.json", "w") as f:
 			json.dump(settings, f)
 		flash("Sikeres módosítás!", "success")
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
 	ringtones = cursor.execute("SELECT id, filepath FROM assets WHERE asset_type = 1").fetchall()
+	ringpatterns = cursor.execute("SELECT id, friendlyname FROM ring_patterns").fetchall()
 	db.close()
-	return render_template("settings.html", ringtones=ringtones, settings=settings)
+	return render_template("settings.html", ringtones=ringtones, settings=settings, ringpatterns=ringpatterns)
+
+@app.route("/devices")
+@login_required
+@permission_required("devices")
+def devices():
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	devices = cursor.execute("SELECT id, pin, device_type, pull_up, friendlyname FROM devices").fetchall()
+	db.close()
+	return render_template("devices.html", devices=devices)
+
+@app.route("/devices/delete/<int:id>")
+@login_required
+@permission_required("devices")
+def deletedevice(id):
+	global devices
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	device_type = cursor.execute("SELECT device_type FROM devices WHERE id = ?", (id, )).fetchone()
+	if device_type == 1:
+		cursor.execute("DELETE FROM ring_schedules WHERE device_id = ?", (id, ))
+	cursor.execute("DELETE FROM devices WHERE id = ?", (id, ))
+	devices.pop(id)
+	db.commit()
+	db.close()
+	flash("Eszköz törlése sikerült!", "success")
+	return redirect(url_for("devices"))
+
+@app.route("/devices/add/<device_type>", methods=("GET", "POST"))
+@login_required
+@permission_required("devices")
+def adddevice(device_type):
+	global devices
+	if request.method == "POST":
+		db = sqlite3.connect(settings["programmesDb"])
+		cursor = db.cursor()
+	if device_type == "ring":
+		if request.method == "POST":
+			cursor.execute("INSERT INTO devices (friendlyname, pin, input, device_type) VALUES (?, ?, 0, 1)", (request.form.get("name"), request.form.get("pin")))
+			db.commit()
+			id = cursor.execute("SELECT id FROM devices WHERE friendlyname = ?", (request.form.get("name"), )).fetchone()[0]
+			db.close()
+			devices[id] = DigitalOutputDevice(request.form.get("pin"))
+			flash("Eszköz hozzáadása sikeres!", "success")
+		return render_template("addphysicalring.html")
+	
+@app.route("/ring-patterns")
+@login_required
+@permission_required("ringpatterns")
+def listringpatterns():
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	patterns = cursor.execute("SELECT * FROM ring_patterns ORDER BY friendlyname").fetchall()
+	db.close()
+	return render_template("listpatterns.html", patterns=patterns, type=2)
+
+@app.route("/ring-patterns/add", methods=("GET", "POST"))
+@login_required
+@permission_required("ringpatterns")
+def createringpattern():
+	if request.method == "POST":
+		name = request.form.get("name")
+		description = request.form.get("description")
+		db = sqlite3.connect(settings["programmesDb"])
+		cursor = db.cursor()
+		try:
+			cursor.execute("INSERT INTO ring_patterns (friendlyname, description) VALUES (?,?)", (name,description))
+			db.commit()
+		except sqlite3.IntegrityError:
+			flash("Már létezik egy "+name+" nevű csengetési dallam!", "danger")
+			db.close()
+			return redirect(url_for("createringpattern"))
+		flash("Csengetési dallam sikeresen létrehozva!", "success")
+		result = cursor.execute("SELECT id FROM ring_patterns WHERE friendlyname = ?", (name,)).fetchone()
+		db.close()
+		return redirect(url_for("viewringpattern", id=result[0]))
+	return render_template("createpattern.html", type=2)
+
+@app.route("/ring-patterns/<int:id>")
+@login_required
+@permission_required("ringpatterns")
+def viewringpattern(id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	results = cursor.execute("SELECT ring_schedule.id, schedule_type, devices.friendlyname, time_to_wait FROM ring_schedule LEFT OUTER JOIN devices ON ring_schedule.device_id = devices.id WHERE pattern_id = ? ORDER BY ring_schedule.id", (id,)).fetchall()
+	name = cursor.execute("SELECT friendlyname FROM ring_patterns WHERE id = ?", (id,)).fetchone()
+	db.close()
+	return render_template("viewringschedule.html", schedule=results, pattern_name=name[0], patternid=id)
+
+@app.route("/ring-patterns/<int:patternid>/add/<int:eventtype>", methods=("GET", "POST"))
+@login_required
+@permission_required("ringpatterns")
+def addringevent(patternid, eventtype):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	name = cursor.execute("SELECT friendlyname FROM ring_patterns WHERE id = ?", (patternid,)).fetchone()
+	devices = cursor.execute('SELECT id, friendlyname FROM devices WHERE device_type = 1').fetchall()
+	if eventtype == 1:
+		if request.method == "POST":
+			cursor.execute("INSERT INTO ring_schedule (pattern_id, schedule_type, device_id) VALUES (?, ?, ?)", (patternid, request.form.get("switch"), request.form.get("device")))
+			db.commit()
+			db.close()
+			flash("Sikeres hozzáadás!", "success")
+			return redirect(url_for("viewringpattern", id=patternid))
+		return render_template("addringswitch.html", pattern_name=name[0], devices=devices)
+	if eventtype == 2:
+		if request.method == "POST":
+			cursor.execute("INSERT INTO ring_schedule (pattern_id, schedule_type, time_to_wait) VALUES (?, 2, ?)", (patternid, request.form.get("time")))
+			db.commit()
+			db.close()
+			flash("Sikeres hozzáadás!", "success")
+			return redirect(url_for("viewringpattern", id=patternid))
+		return render_template("addringwait.html", pattern_name=name[0], devices=devices)
+
+@app.route("/ring-patterns/<int:patternid>/delete/<int:id>")
+@login_required
+@permission_required("ringpatterns")
+def deleteringevent(patternid, id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	cursor.execute("DELETE FROM ring_schedule WHERE id = ?", (id,))
+	db.commit()
+	flash("Csengetési dallam esemény sikeresen törölve!", "success")
+	db.close()
+	return redirect(url_for("viewringpattern", id=patternid))
+
+@app.route("/ring-patterns/<int:id>/delete")
+@login_required
+@permission_required("ringpatterns")
+def deleteringpattern(id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	cursor.execute("DELETE FROM schedule WHERE asset_id = ? AND schedule_type = 4", (id, ))
+	cursor.execute("DELETE FROM ring_patterns WHERE id = ?", (id,))
+	cursor.execute("DELETE FROM ring_schedule WHERE pattern_id = ?", (id, ))
+	if settings["classStartRingpatternId"] == id:
+		settings["classStartRingpatternId"] = None
+	if settings["classEndReminderRingpatternId"] == id:
+		settings["classEndReminderRingpatternId"] = None
+	if settings["classEndRingpatternId"] == id:
+		settings["classEndRingpatternId"] = None
+	db.commit()
+	with open("settings.json", "w") as f:
+			json.dump(settings, f)
+	flash("Csengetési dallam sikeresen törölve!", "success")
+	db.close()
+	return redirect(url_for("listringpatterns"))
+
 
 readSettings()
+loadDevices()
 loadTodaysProgramme()
 thread = threading.Thread(target=lambda: app.run(debug=True, host="0.0.0.0", use_reloader=False))
 thread.daemon = True
@@ -940,13 +1154,16 @@ while True:
 	if lastloaded != time.day:
 		loadTodaysProgramme()
 	for event in events:
-		if event.time.hour == time.hour and event.time.minute == time.minute and isinstance(event, (SoundEvent, MusicEvent)):
+		if event.time.hour == time.hour and event.time.minute == time.minute and isinstance(event, (SoundEvent, MusicEvent, OutputEvent)):
 			if isinstance(event, MusicEvent) and musicEnabled == False:
 				events.remove(event)
 				continue
 			if isinstance(event, MusicEvent) and (pygame.mixer.Channel(1).get_busy() == True or pygame.mixer.Channel(0).get_busy() == True):
 				continue
-			if not isinstance(event, MusicEvent):
+			if isinstance(event, OutputEvent) and bellEnabled == False:
+				events.remove(event)
+				continue
+			if not isinstance(event, (MusicEvent, OutputEvent)):
 				if event.type == 1 and bellEnabled == False:
 					events.remove(event)
 					continue
