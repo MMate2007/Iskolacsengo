@@ -4,7 +4,7 @@
 {% block title %}Csengetési {% if type == 1%} rendek {% elif type == 2 %} dallamok{% endif %}{% endblock %}
 {% block headtitle %}Csengetési {% if type == 1%} rendek {% elif type == 2 %} dallamok{% endif %}{% endblock %}
 {% block content %}
-<a href="{% if type == 1%}{{ url_for('createpattern') }}{% elif type == 2 %}{{ url_for('createringpattern') }}{% endif %}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Csengetési rend létrehozása</a>
+<a href="{% if type == 1%}{{ url_for('createpattern') }}{% elif type == 2 %}{{ url_for('createringpattern') }}{% endif %}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Csengetési {% if type == 1 %}rend{% elif type == 2 %}dallam{% endif %} létrehozása</a>
 <div class="table-responsive">
     <table class="table">
         <thead>
