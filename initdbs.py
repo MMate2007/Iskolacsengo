@@ -14,7 +14,12 @@ settings = {
 	'classEndAssetId': None,
 	'classEndRingpatternId': None,
 	'uploadFolder': None,
-	'musicFadeOut': 5
+	'musicFadeOut': 5,
+	'musicFromFTP': False,
+	'FTPS': False,
+	'FTPHost': None,
+	'FTPUser': None,
+	'FTPPassword': None
 }
 try:
 	with open("settings.json") as s:
@@ -27,6 +32,7 @@ if settings["uploadFolder"] is None:
 	settings["uploadFolder"] = getcwd()+"/assets"
 if not path.isdir(settings["uploadFolder"]):
 	makedirs(settings["uploadFolder"])
+makedirs(path.join(settings["uploadFolder"], "ftp"))
 with open("settings.json", "w") as f:
 	json.dump(settings, f)
 
