@@ -35,6 +35,7 @@
                         {% else %}
                         <a href="{{ url_for('addmusic', date=date, schedule_id=block[0]) }}" class="btn btn-primary disabled" role="button" style="float: right;" aria-disabled="true"><i class="bi bi-plus-lg"></i> Zene hozzáadása</a>
                         {% endif %}
+                        <a href="{{ url_for('downloadmusicfromftp', date=date, schedule_id=block[0]) }}" class="btn btn-primary mx-1" role="button" style="float: right;"><i class="bi bi-cloud-arrow-down"></i> Letöltés FTP szerverről</a>
                         <table class="table">
                             {% for entry in music[id] %}
                             <tr>

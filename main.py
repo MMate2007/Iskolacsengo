@@ -15,6 +15,7 @@ from functools import wraps
 import alsaaudio
 from gpiozero import CPUTemperature, DiskUsage, LoadAverage, DigitalOutputDevice
 from pydub import AudioSegment, effects
+from ftplib import FTP, error_perm
 
 allowedfiles = ["wav", "mp3", "ogg", "m4a"]
 
@@ -836,6 +837,44 @@ def addmusic(date, schedule_id):
 	files = cursor.execute("SELECT id, filepath FROM assets WHERE asset_type = 2").fetchall()
 	db.close()
 	return render_template("addmusic.html", files=files)
+
+@app.route("/viewmusic/<string:date>/downloadfromftp/<int:schedule_id>")
+@login_required
+@permission_required("setmusic")
+def downloadmusicfromftp(date, schedule_id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	ftpu = settings["FTPUser"]
+	if ftpu is None:
+		ftpu = ""
+	ftpp = settings["FTPPassword"]
+	if ftpp is None:
+		ftpp = ""
+	ftp = FTP(settings["FTPHost"])
+	ftp.login(ftpu, ftpp)
+	try:
+		ftp.cwd(date)
+		musicblocks = cursor.execute("SELECT id FROM schedule WHERE schedule_type = 3 ORDER BY start").fetchall()
+		blockorder = musicblocks.index((schedule_id, ))+1
+		ftp.cwd(str(blockorder))
+		files = ftp.nlst()
+		for file in files:
+			with open(os.path.join(app.config["UPLOAD_FOLDER"], "ftp", file), "wb") as f:
+				ftp.retrbinary("RETR "+file, f.write)
+			cursor.execute("INSERT OR IGNORE INTO assets (asset_type, filepath, length) VALUES (?,?,?)", (2, os.path.join(app.config["UPLOAD_FOLDER"], "ftp", file), ceil(pygame.mixer.Sound(os.path.join(app.config["UPLOAD_FOLDER"], "ftp", file)).get_length())))
+			id = cursor.execute("SELECT id FROM assets WHERE filepath = ?", (os.path.join(app.config["UPLOAD_FOLDER"], "ftp", file), )).fetchone()[0]
+			params = cursor.execute("SELECT MAX(params) FROM customsounds WHERE date = ? AND schedule_id = ?", (date, schedule_id)).fetchone()
+			param = 0
+			if params[0] != None:
+				param = int(params[0])+1
+			cursor.execute("INSERT INTO customsounds(asset_id, date, schedule_id, params) VALUES (?, ?, ?, ?)", (id, date, schedule_id, param))
+		flash("A zenék betöltése megtörtént!", "success")
+	except error_perm:
+		flash("Nincs mit betölteni az FTP szerverről.", "warning")
+	ftp.quit()
+	db.commit()
+	db.close()
+	return redirect(url_for("viewmusic", date=date))
 
 @app.route("/viewmusic/<string:date>/delete/<int:id>")
 @login_required

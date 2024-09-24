@@ -90,7 +90,30 @@
         <div class="mb-3">
             <label for="uploadFolder" class="form-label">Fájlok feltöltése ebbe a mappába:</label>
             <input type="text" name="uploadFolder" id="uploadFolder" class="form-control" required value="{{ settings['uploadFolder'] }}">
-        </div>    
+        </div>
+    </fieldset>
+    <fieldset>
+        <legend>FTP beállítások a zenék lekéréséhez</legend>
+        <div class="mb-3 form-check">
+            <input type="checkbox" name="musicFromFTP" id="musicFromFTP" class="form-check-input" value="1" {% if settings['musicFromFTP'] %}checked{% endif %}>
+            <label for="musicFromFTP" class="form-check-label">Zenék letöltése FTP szerverről</label>
+        </div>
+        <div class="mb-3 form-check">
+            <input type="checkbox" name="FTPS" id="FTPS" class="form-check-input" value="1" {% if settings['FTPS'] %}checked{% endif %}>
+            <label for="FTPS" class="form-check-label">FTP TLS</label>
+        </div>
+        <div class="mb-3">
+            <label for="FTPHost" class="form-label">FTP szerver:</label>
+            <input type="text" name="FTPHost" id="FTPHost" class="form-control" required value="{{ settings['FTPHost'] }}">
+        </div>
+        <div class="mb-3">
+            <label for="FTPUser" class="form-label">FTP felhasználónév:</label>
+            <input type="text" name="FTPUser" id="FTPUser" class="form-control" required value="{{ settings['FTPUser'] }}">
+        </div>
+        <div class="mb-3">
+            <label for="FTPPassword" class="form-label">FTP jelszó:</label>
+            <input type="password" name="FTPPassword" id="FTPPassword" class="form-control" required value="{{ settings['FTPPassword'] }}">
+        </div>
     </fieldset>
     <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Mentés</button>
 </form>
