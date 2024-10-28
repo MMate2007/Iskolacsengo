@@ -48,7 +48,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    <a class="btn btn-danger" role="button" href="{{ url_for('deleteschedule', id=event[0], patternid=patternid) }}"><i class="bi bi-trash"></i> Törlés</a>
+                    <a class="btn btn-danger" role="button" href="{{ url_for('deleteschedule', id=event[0], patternid=patternid) }}"><i class="bi bi-trash"></i><span class="d-none d-sm-inline"> Törlés</span></a>
                 </td>
             </tr>
             {% endfor %}
