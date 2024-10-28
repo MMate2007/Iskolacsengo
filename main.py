@@ -394,8 +394,13 @@ def playprogramme(id, time):
 @permission_required("patterns")
 @permission_required("playbacks")
 def deleteprogramme(id, time):
-	if events[id].time.strftime("%Y-%m-%d %H:%M:%S") == time:
-		events.pop(id)
+	try:
+		if events[id].time.strftime("%Y-%m-%d %H:%M:%S") == time:
+			events.pop(id)
+			flash("A program törlése sikeres!", "success")
+	except IndexError:
+		flash("A törölni kívánt program már nem létezik.", "danger")
+	
 	return redirect(url_for("admin"))
 
 @app.route("/setpatterns", methods=("GET", "POST"))
