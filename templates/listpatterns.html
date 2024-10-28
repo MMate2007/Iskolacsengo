@@ -20,8 +20,8 @@
                 <td>{{ pattern[1] }}</td>
                 <td>{{ pattern[2] }}</td>
                 <td>
-                    <a href="{% if type == 1%}{{ url_for('viewschedule', id=pattern[0]) }}{% elif type == 2 %}{{ url_for('viewringpattern', id=pattern[0]) }}{% endif %}" class="btn btn-primary" role="button"><i class="bi bi-pencil"></i> Szerkesztés</a>
-                    <a class="btn btn-danger" role="button" href="{% if type == 1%}{{ url_for('deletepattern', id=pattern[0]) }}{% elif type == 2 %}{{ url_for('deleteringpattern', id=pattern[0]) }}{% endif %}"><i class="bi bi-trash"></i> Törlés</a>
+                    <a href="{% if type == 1%}{{ url_for('viewschedule', id=pattern[0]) }}{% elif type == 2 %}{{ url_for('viewringpattern', id=pattern[0]) }}{% endif %}" class="btn btn-primary" role="button"><i class="bi bi-pencil"></i><span class="d-none d-sm-inline"> Szerkesztés</span></a>
+                    <a class="btn btn-danger" role="button" href="{% if type == 1%}{{ url_for('deletepattern', id=pattern[0]) }}{% elif type == 2 %}{{ url_for('deleteringpattern', id=pattern[0]) }}{% endif %}"><i class="bi bi-trash"></i><span class="d-none d-sm-inline"> Törlés</span></a>
                 </td>
             </tr>
             {% endfor %}

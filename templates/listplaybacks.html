@@ -24,7 +24,7 @@
                     {{ playback[1] }}
                 </td>
                 <td>
-                    <a class="btn btn-danger" role="button" href="{{ url_for('deleteplayback', id=playback[0]) }}"><i class="bi bi-trash"></i> Törlés</a>
+                    <a class="btn btn-danger" role="button" href="{{ url_for('deleteplayback', id=playback[0]) }}"><i class="bi bi-trash"></i><span class="d-none d-sm-inline"> Törlés</span></a>
                 </td>
             </tr>
             {% endfor %}

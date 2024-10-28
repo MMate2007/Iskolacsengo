@@ -53,9 +53,9 @@
         {% if current_user.haspermission("patterns") and current_user.haspermission("playbacks") %}
         <td>
             {% if current_user.haspermission("previewfiles") %}
-            <a href="{{ url_for('playprogramme', id=events.index(event), time=event.time) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i> Lejátszás most</a>
+            <a href="{{ url_for('playprogramme', id=events.index(event), time=event.time) }}" class="btn btn-primary" role="button"><i class="bi bi-play-fill"></i><span class="d-none d-sm-inline"> Lejátszás most</span></a>
             {% endif %}
-            <a class="btn btn-danger" role="button" href="{{ url_for('deleteprogramme', id=events.index(event), time=event.time) }}"><i class="bi bi-trash"></i> Törlés</a>
+            <a class="btn btn-danger" role="button" href="{{ url_for('deleteprogramme', id=events.index(event), time=event.time) }}"><i class="bi bi-trash"></i><span class="d-none d-sm-inline"> Törlés</span></a>
         </td>
         {% endif %}
     </tr>
