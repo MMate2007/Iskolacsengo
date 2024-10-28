@@ -1156,6 +1156,11 @@ thread.daemon = True
 thread.start()
 while True:
 	time = datetime.now()
+	if int(settings["timeshift"]) != 0:
+		if int(settings["timeshift"]) < 0:
+			time -= timedelta(microseconds=abs(int(settings["timeshift"])))
+		if int(settings["timeshift"]) > 0:
+			time += timedelta(microseconds=abs(int(settings["timeshift"])))
 	if lastloaded != time.day:
 		loadTodaysProgramme()
 	for event in events:

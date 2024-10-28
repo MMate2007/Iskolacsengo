@@ -14,7 +14,8 @@ settings = {
 	'classEndAssetId': None,
 	'classEndRingpatternId': None,
 	'uploadFolder': None,
-	'musicFadeOut': 5
+	'musicFadeOut': 5,
+	'timeshift': 0
 }
 try:
 	with open("settings.json") as s:
