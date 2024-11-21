@@ -120,6 +120,8 @@ def importfromfile(file):
             if key[-2:] == "Db":
                 dbs.append(key[:-2])
         for database in dbs:
+            if settings[database+"Db"] is None:
+                continue
             db = sqlite3.connect(settings[database+"Db"])
             cursor = db.cursor()
             try:
