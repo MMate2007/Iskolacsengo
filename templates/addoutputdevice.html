@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}{% if device_type == "ring" %}Fizikai csengő{% else %}kimeneti eszköz{% endif %} hozzáadása{% endblock %}
+{% block headtitle %}{% if device_type == "ring" %}Fizikai csengő{% else %}kimeneti eszköz{% endif %} hozzáadása{% endblock %}
+{% block content %}
+
+<form method="post" action="#">
+    <div class="mb-3">
+        <label for="name" class="form-label">Név:</label>
+        <input type="text" name="name" id="name" class="form-control">
+    </div>
+    <div class="mb-3">
+        <label for="pin" class="form-label">Tüske (Broadcom BCM számozás alapján):</label>
+        <input type="number" name="pin" id="pin" class="form-control">
+    </div>
+    <div class="mb-3">
+        <label for="reversed" class="form-label">Fordított polaritás:</label>
+        <select name="reversed" id="reversed" class="form-select">
+            <option value="0" selected>Nem (bekapcsolt állapot: 3.3V, kikapcsolt állapot: 0V)</option>
+            <option value="1">Igen (bekapcsolt állapot: 0V, kikapcsolt állapot: 3.3V)</option>
+        </select>
+    </div>
+    {% if device_type != "ring" %}
+    <div class="mb-3">
+        <label for="default" class="form-label">Alapértelmezett állapot:</label>
+        <select name="default" id="default" class="form-select">
+            <option value="0" selected>Kikapcsolt</option>
+            <option value="1">Bekapcsolt</option>
+        </select>
+    </div>
+    {% endif %}
+    <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Mentés</button>
+</form>
+
+{% endblock %}

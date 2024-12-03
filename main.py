@@ -108,10 +108,13 @@ def loadDevices():
 	devices = {}
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	deviceslist = cursor.execute("SELECT id, pin, device_type, pull_up FROM devices").fetchall()
+	deviceslist = cursor.execute("SELECT id, pin, device_type, pull_up, reversed FROM devices").fetchall()
 	for device in deviceslist:
-		if device[2] == 1:
-			devices[device[0]] = DigitalOutputDevice(device[1])
+		if (device[2] == 1) or (device[2] == 2):
+			pullup = device[3]
+			if pullup is None:
+				pullup = False
+			devices[device[0]] = DigitalOutputDevice(device[1], device[4] ^ True, pullup)
 	db.close()
 
 def loadTodaysProgramme():
@@ -1006,7 +1009,7 @@ def settings():
 def devices():
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	devices = cursor.execute("SELECT id, pin, device_type, pull_up, friendlyname FROM devices").fetchall()
+	devices = cursor.execute("SELECT id, pin, device_type, pull_up, friendlyname, reversed FROM devices").fetchall()
 	db.close()
 	return render_template("devices.html", devices=devices)
 
@@ -1035,15 +1038,21 @@ def adddevice(device_type):
 	if request.method == "POST":
 		db = sqlite3.connect(settings["programmesDb"])
 		cursor = db.cursor()
-	if device_type == "ring":
-		if request.method == "POST":
-			cursor.execute("INSERT INTO devices (friendlyname, pin, input, device_type) VALUES (?, ?, 0, 1)", (request.form.get("name"), request.form.get("pin")))
+		if device_type == "ring":
+			cursor.execute("INSERT INTO devices (friendlyname, pin, input, device_type, reversed) VALUES (?, ?, 0, 1, ?)", (request.form.get("name"), request.form.get("pin"), request.form.get("reversed")))
 			db.commit()
 			id = cursor.execute("SELECT id FROM devices WHERE friendlyname = ?", (request.form.get("name"), )).fetchone()[0]
 			db.close()
-			devices[id] = DigitalOutputDevice(request.form.get("pin"))
-			flash("Eszköz hozzáadása sikeres!", "success")
-		return render_template("addphysicalring.html")
+			devices[id] = DigitalOutputDevice(request.form.get("pin"), bool(request.form.get("reversed")) ^ True)
+			flash("Fizikai csengő hozzáadása sikeres!", "success")
+		elif device_type == "output":
+			cursor.execute("INSERT INTO devices (friendlyname, pin, input, device_type, reversed, pull_up) VALUES (?, ?, 0, 2, ?, ?)", (request.form.get("name"), request.form.get("pin"), request.form.get("reversed"), request.form.get("default")))
+			db.commit()
+			id = cursor.execute("SELECT id FROM devices WHERE friendlyname = ?", (request.form.get("name"), )).fetchone()[0]
+			db.close()
+			devices[id] = DigitalOutputDevice(request.form.get("pin"), bool(request.form.get("reversed")) ^ True, bool(request.form.get("default")))
+			flash("Kimeneti eszköz hozzáadása sikeres!", "success")
+	return render_template("addoutputdevice.html", device_type=device_type)
 	
 @app.route("/ring-patterns")
 @login_required

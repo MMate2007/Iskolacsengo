@@ -47,7 +47,8 @@ CREATE TABLE devices (
     pin INTEGER NOT NULL UNIQUE,
     input BOOLEAN NOT NULL,
     device_type INTEGER NOT NULL,
-    pull_up BOOLEAN
+    pull_up BOOLEAN,
+	reversed BOOLEAN NOT NULL DEFAULT FALSE
 );
 DROP TABLE IF EXISTS ring_patterns;
 CREATE TABLE ring_patterns (
@@ -62,4 +63,11 @@ CREATE TABLE ring_schedule (
 	schedule_type INTEGER NOT NULL,
 	device_id INTEGER,
 	time_to_wait REAL
+);
+DROP TABLE IF EXISTS output_rules;
+CREATE TABLE output_rules (
+	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	event TEXT NOT NULL,
+	device_id INTEGER NOT NULL,
+	state BOOLEAN NOT NULL
 );
