@@ -3,15 +3,21 @@ import sys
 import shutil
 import os
 from datetime import datetime
+from time import sleep
 
-export(sys.argv[1], "updateexport.json")
 backup = "../Iskolacsengo-backup-"+datetime.now().strftime("%Y%m%d-%H%M%S")
 shutil.copytree("./", backup)
+export(sys.argv[1], "updateexport.json")
 os.system("git pull")
 os.system("python initdbs.py")
 importfromfile("updateexport.json")
 os.remove("updateexport.json")
 shutil.rmtree("__pycache__")
 os.system("systemctl restart iskolacsengo.service")
+sleep(3)
 if os.system("service iskolacsengo status") != 0:
-    # Cserélje vissza a backupra
+    print("Visszacserélés a korábbi verzióra...")
+    shutil.copytree(backup, "./", dirs_exist_ok=True)
+    os.system("systemctl restart iskolacsengo.service")
+else:
+    print("Sikeres frissítés!")
