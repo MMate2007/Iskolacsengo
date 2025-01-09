@@ -15,3 +15,10 @@ CREATE TABLE userpermissions (
 	user_id INTEGER NOT NULL,
 	permission_id INTEGER NOT NULL
 );
+DROP TABLE IF EXISTS tokens;
+CREATE TABLE tokens (
+	token TEXT NOT NULL PRIMARY KEY,
+	user_id INTEGER NOT NULL,
+	created_on_login BOOLEAN NOT NULL,
+	active BOOLEAN NOT NULL
+);
