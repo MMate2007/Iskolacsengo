@@ -239,6 +239,19 @@ def user_loader(id):
 		return
 	return User(id)
 
+@loginmanager.request_loader
+def load_user_from_request(request):
+	header = request.headers.get("Authorization")
+	if header:
+		token = header.split()[1]
+		db = sqlite3.connect(settings["usersDb"])
+		cursor = db.cursor()
+		userid = cursor.execute("SELECT user_id FROM tokens WHERE active = TRUE AND token = ?", (token,)).fetchone()
+		db.close()
+		if userid:
+			return User(userid)
+	return None
+
 @app.route("/")
 def home():
 	if current_user.is_authenticated:
