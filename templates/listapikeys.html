@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}API kulcsok{% endblock %}
+{% block headtitle %}API kulcsok{% endblock %}
+{% block content %}
+<a href="{{ url_for('createapikey') }}" class="btn btn-primary" role="button"><i class="bi bi-person-plus"></i> API kulcs létrehozása</a>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Sorszám</th>
+                <th>Műveletek</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for token in tokens %}
+            <tr>
+                <td>{{ token[0] }}</td>
+                <td>
+                    {% if token[1] %}
+                    <a href="{{ url_for('changeapikeyactive', token=token[0]) }}" role="button" class="btn btn-danger"><i class="bi bi-x-lg"></i> API kulcs letiltása</a>
+                    {% else %}
+                    <a href="{{ url_for('changeapikeyactive', token=token[0]) }}" role="button" class="btn btn-success"><i class="bi bi-check2"></i> API kulcs engedélyezése</a>
+                    {% endif %}
+                    <a href="{{ url_for('deleteapikey', token=token[0]) }}" role="button" class="btn btn-danger"><i class="bi bi-trash"></i><span class="d-none d-sm-inline"> Törlés</span></a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

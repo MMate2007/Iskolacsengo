@@ -15,7 +15,8 @@ settings = {
 	'classEndRingpatternId': None,
 	'uploadFolder': None,
 	'musicFadeOut': 5,
-	'timeshift': 0
+	'timeshift': 0,
+	'enableAPI': True
 }
 try:
 	with open("settings.json") as s:
@@ -65,7 +66,8 @@ permissions = [["reload", "Programok újratöltése"],
 				["setmusic", "Zenék beállítása napokra"],
 				["disablemusic", "Zene letiltása"],
 				["devices", "Eszközök hozzáadása, törlése"],
-				["ringpatterns", "Fizikai csengetési minták létrehozása, módosítása és törlése"]
+				["ringpatterns", "Fizikai csengetési minták létrehozása, módosítása és törlése"],
+				["api", "API kulcsok kezelése"]
 				]
 for permission in permissions:
 	userscursor.execute("INSERT INTO permissions (friendlyname, humanname) VALUES (?, ?)", (permission[0],permission[1]))

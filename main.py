@@ -15,6 +15,7 @@ from functools import wraps
 import alsaaudio
 from gpiozero import CPUTemperature, DiskUsage, LoadAverage, DigitalOutputDevice
 from pydub import AudioSegment, effects
+from secrets import token_urlsafe
 
 allowedfiles = ["wav", "mp3", "ogg", "m4a"]
 
@@ -241,15 +242,16 @@ def user_loader(id):
 
 @loginmanager.request_loader
 def load_user_from_request(request):
-	header = request.headers.get("Authorization")
-	if header:
-		token = header.split()[1]
-		db = sqlite3.connect(settings["usersDb"])
-		cursor = db.cursor()
-		userid = cursor.execute("SELECT user_id FROM tokens WHERE active = TRUE AND token = ?", (token,)).fetchone()
-		db.close()
-		if userid:
-			return User(userid)
+	if settings["enableAPI"]:
+		header = request.headers.get("Authorization")
+		if header:
+			token = header.split()[1]
+			db = sqlite3.connect(settings["usersDb"])
+			cursor = db.cursor()
+			userid = cursor.execute("SELECT user_id FROM tokens WHERE active = TRUE AND token = ?", (token,)).fetchone()
+			db.close()
+			if userid:
+				return User(userid[0])
 	return None
 
 @app.route("/")
@@ -985,6 +987,7 @@ def deleteuser(id):
 	cursor = db.cursor()
 	cursor.execute("DELETE FROM users WHERE id = ?", (id,))
 	cursor.execute("DELETE FROM userpermissions WHERE user_id = ?", (id, ))
+	cursor.execute("DELETE FROM tokens WHERE user_id = ?", (id, ))
 	db.commit()
 	flash("Felhasználó sikeresen törölve!", "success")
 	db.close()
@@ -1160,6 +1163,56 @@ def deleteringpattern(id):
 	db.close()
 	return redirect(url_for("listringpatterns"))
 
+@app.route("/apikeys/manage")
+@login_required
+@permission_required("api")
+def listapikeys():
+	db = sqlite3.connect(settings["usersDb"])
+	cursor = db.cursor()
+	tokens = cursor.execute("SELECT token, active FROM tokens WHERE user_id = ?", (current_user.id, )).fetchall()
+	db.close()
+	return render_template("listapikeys.html", tokens=tokens)
+
+@app.route("/apikeys/create")
+@login_required
+@permission_required("api")
+def createapikey():
+	db = sqlite3.connect(settings["usersDb"])
+	cursor = db.cursor()
+	cursor.execute("INSERT INTO tokens (token, user_id, created_on_login, active) VALUES (?, ?, 0, 1)", (token_urlsafe(16), current_user.id))
+	db.commit()
+	db.close()
+	flash("API kulcs sikeresen létrehozva!", "success")
+	return redirect(url_for("listapikeys"))
+
+@app.route("/apikeys/<token>/changestate")
+@login_required
+@permission_required("api")
+def changeapikeyactive(token):
+	db = sqlite3.connect(settings["usersDb"])
+	cursor = db.cursor()
+	active = cursor.execute("SELECT active FROM tokens WHERE token = ?", (token, )).fetchone()
+	if active[0] == 0:
+		cursor.execute("UPDATE tokens SET active = 1 WHERE token = ?", (token, ))
+	elif active[0] == 1:
+		cursor.execute("UPDATE tokens SET active = 0 WHERE token = ?", (token, ))
+	db.commit()
+	db.close()
+	flash("API kulcs állapota sikeresen megváltoztatva!", "success")
+	return redirect(url_for("listapikeys"))
+
+
+@app.route("/apikeys/<token>/delete")
+@login_required
+@permission_required("api")
+def deleteapikey(token):
+	db = sqlite3.connect(settings["usersDb"])
+	cursor = db.cursor()
+	cursor.execute("DELETE FROM tokens WHERE token = ?", (token, ))
+	db.commit()
+	db.close()
+	flash("API kulcs sikeresen törölve!", "success")
+	return redirect(url_for("listapikeys"))
 
 readSettings()
 loadDevices()
