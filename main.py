@@ -502,6 +502,24 @@ def deletepattern(id):
 	db.close()
 	return redirect(url_for("listpatterns"))
 
+@app.route("/<int:id>/rename", methods=("GET", "POST"))
+@login_required
+@permission_required("patterns")
+def renamepattern(id):
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	if request.method == "POST":
+		name = request.form.get("name")
+		description = request.form.get("description")
+		cursor.execute("UPDATE patterns SET friendlyname = ?, description = ? WHERE id = ?", (name, description, id))
+		db.commit()
+		flash("Csengetési rend sikeresen átnevezve!", "success")
+		db.close()
+		return redirect(url_for("viewschedule", id=id))
+	result = cursor.execute("SELECT friendlyname, description FROM patterns WHERE id = ?", (id,)).fetchone()
+	db.close()
+	return render_template("renamepattern.html", name=result[0], description=result[1], type=1)
+
 @app.route("/<int:id>/viewschedule")
 @login_required
 @permission_required("patterns")
