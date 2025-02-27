@@ -1083,11 +1083,11 @@ def listringpatterns():
 @login_required
 @permission_required("ringpatterns")
 def createringpattern():
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
 	if request.method == "POST":
 		name = request.form.get("name")
 		description = request.form.get("description")
-		db = sqlite3.connect(settings["programmesDb"])
-		cursor = db.cursor()
 		try:
 			cursor.execute("INSERT INTO ring_patterns (friendlyname, description) VALUES (?,?)", (name,description))
 			db.commit()
@@ -1095,11 +1095,17 @@ def createringpattern():
 			flash("Már létezik egy "+name+" nevű csengetési dallam!", "danger")
 			db.close()
 			return redirect(url_for("createringpattern"))
-		flash("Csengetési dallam sikeresen létrehozva!", "success")
 		result = cursor.execute("SELECT id FROM ring_patterns WHERE friendlyname = ?", (name,)).fetchone()
+		frompattern = request.form.get("pattern")
+		if frompattern != "":
+			cursor.execute("INSERT INTO ring_schedule (pattern_id, schedule_type, device_id, time_to_wait) SELECT ?, schedule_type, device_id, time_to_wait FROM ring_schedule WHERE pattern_id = ?", (result[0], frompattern))
+			db.commit()
 		db.close()
+		flash("Csengetési dallam sikeresen létrehozva!", "success")
 		return redirect(url_for("viewringpattern", id=result[0]))
-	return render_template("createpattern.html", type=2)
+	patterns = cursor.execute("SELECT id, friendlyname FROM ring_patterns ORDER BY friendlyname").fetchall()
+	db.close()
+	return render_template("createpattern.html", type=2, patterns=patterns)
 
 @app.route("/ring-patterns/<int:id>")
 @login_required

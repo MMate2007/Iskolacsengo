@@ -17,7 +17,7 @@
     <div class="mb-3">
         <label for="pattern">Létrehozás ebből:</label>
         <select name="pattern" id="pattern" class="form-select">
-            <option value="" selected>új csengetési rend létrehozása</option>
+            <option value="" selected>új csengetési{% if type == 1 %} rend {% else %} dallam {% endif %}létrehozása</option>
             {% for pattern in patterns %}
                 <option value="{{ pattern[0] }}">{{ pattern[1] }}</option>
             {% endfor %}
