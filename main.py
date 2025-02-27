@@ -453,11 +453,11 @@ def deletedate(date):
 @login_required
 @permission_required("patterns")
 def createpattern():
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
 	if request.method == "POST":
 		name = request.form.get("name")
 		description = request.form.get("description")
-		db = sqlite3.connect(settings["programmesDb"])
-		cursor = db.cursor()
 		try:
 			cursor.execute("INSERT INTO patterns (friendlyname, description) VALUES (?,?)", (name,description))
 			db.commit()
@@ -465,11 +465,17 @@ def createpattern():
 			flash("Már létezik egy "+name+" nevű csengetési rend!", "danger")
 			db.close()
 			return redirect(url_for("createpattern"))
-		flash("Csengetési rend sikeresen létrehozva!", "success")
 		result = cursor.execute("SELECT id FROM patterns WHERE friendlyname = ?", (name,)).fetchone()
+		frompattern = request.form.get("pattern")
+		if frompattern != "":
+			cursor.execute("INSERT INTO schedule (pattern_id, schedule_type, start, end, asset_id) SELECT ?, schedule_type, start, end, asset_id FROM schedule WHERE pattern_id = ?", (result[0], frompattern))
+			db.commit()
 		db.close()
+		flash("Csengetési rend sikeresen létrehozva!", "success")
 		return redirect(url_for("viewschedule", id=result[0]))
-	return render_template("createpattern.html", type=1)
+	patterns = cursor.execute("SELECT id, friendlyname FROM patterns ORDER BY friendlyname").fetchall()
+	db.close()
+	return render_template("createpattern.html", type=1, patterns=patterns)
 
 @app.route("/listpatterns")
 @login_required

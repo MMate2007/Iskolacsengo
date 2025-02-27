@@ -14,6 +14,15 @@
         <label for="description" class="form-label">Leírás:</label>
         <textarea name="description" id="description" class="form-control"></textarea>
     </div>
+    <div class="mb-3">
+        <label for="pattern">Létrehozás ebből:</label>
+        <select name="pattern" id="pattern" class="form-select">
+            <option value="" selected>új csengetési rend létrehozása</option>
+            {% for pattern in patterns %}
+                <option value="{{ pattern[0] }}">{{ pattern[1] }}</option>
+            {% endfor %}
+        </select>
+    </div>
     <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Mentés</button>
 </form>
 
