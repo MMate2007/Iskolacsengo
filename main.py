@@ -270,6 +270,10 @@ def logout():
 	logout_user()
 	return redirect(url_for("home"))
 
+@app.route("/time")
+def gettime():
+	return datetime.now().strftime("%Y. %m. %d. %H:%M:%S")
+
 @app.route("/admin", methods=("GET", "POST"))
 @login_required
 def admin():

@@ -44,6 +44,7 @@
 <p>Processzor hőmérséklete: {{ cputemp }}°C</p>
 <p>Processzor kihasználtsága: {{ cpuload }}%</p>
 <p>Tárhely kihasználtsága: {{ diskusage }}%</p>
+<p>Rendszeridő: <span hx-get="/time" hx-trigger="load"></span></p>
 <h2>Mai program</h2>
 <table class="table">
     {% for event in events %}
