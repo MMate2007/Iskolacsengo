@@ -47,7 +47,8 @@ CREATE TABLE devices (
     pin INTEGER NOT NULL UNIQUE,
     input BOOLEAN NOT NULL,
     device_type INTEGER NOT NULL,
-    pull_up BOOLEAN
+    pull_up BOOLEAN,
+	reverse BOOLEAN NOT NULL DEFAULT FALSE
 );
 DROP TABLE IF EXISTS ring_patterns;
 CREATE TABLE ring_patterns (

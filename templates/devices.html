@@ -13,6 +13,7 @@
                 <th>Típus</th>
                 <th>Tüske</th>
                 <th>Ellenállás</th>
+                <th>Fordított állapot</th>
                 <th>Műveletek</th>
             </tr>
         </thead>
@@ -31,15 +32,29 @@
                     {{ device[1] }}
                 </td>
                 <td>
+                    {% if device[6] %}
                     {% if device[3] == 1 %}
-                    felfelé
+                    3.3V felé
                     {% elif device[3] == 0 %}
-                    lefelé
+                    GND felé
                     {% else %}
                     nincs
-                    {% endif %} 
+                    {% endif %}
+                    {% elif not device[6] %}
+                    -
+                    {% endif %}
                 </td>
                 <td>
+                    {% if device[5] %}
+                    igen
+                    {% else %}
+                    nem
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not device[6] %}
+                        <a href="{{ url_for('toggledevice', id=device[0], tostate=not states[device[0]]) }}" role="button" class="btn btn-{{ 'danger' if states[device[0]] else 'success' }}">{% if states[device[0]] %}<i class="bi bi-toggle-off"></i> Kikapcsolás{% else %}<i class="bi bi-toggle-on"></i> Bekapcsolás{% endif %}</a>
+                    {% endif %}
                     <a class="btn btn-danger" role="button" href="{{ url_for('deletedevice', id=device[0]) }}"><i class="bi bi-trash"></i><span class="d-none d-sm-inline"> Törlés</span></a>
                 </td>
             </tr>

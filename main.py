@@ -74,7 +74,7 @@ class MusicFadeEvent():
 		pygame.mixer.music.fadeout(self.fade*1000)
 		pygame.mixer.music.unload()
 
-class OutputEvent():
+class PhysicalRingEvent():
 	def __init__(self, time, patternid):
 		global settings
 		self.time = time
@@ -108,10 +108,10 @@ def loadDevices():
 	devices = {}
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	deviceslist = cursor.execute("SELECT id, pin, device_type, pull_up FROM devices").fetchall()
+	deviceslist = cursor.execute("SELECT id, pin, device_type, pull_up, reverse FROM devices").fetchall()
 	for device in deviceslist:
 		if device[2] == 1:
-			devices[device[0]] = DigitalOutputDevice(device[1])
+			devices[device[0]] = DigitalOutputDevice(device[1], active_high=not device[4])
 	db.close()
 
 def loadTodaysProgramme():
@@ -136,7 +136,7 @@ def loadTodaysProgramme():
 	for result in results:
 		if result[0] == 1:
 			if settings["classStartRingpatternId"] is not None:
-				events.append(OutputEvent(datetime.strptime(result[1], "%H:%M"), settings["classStartRingpatternId"]))
+				events.append(PhysicalRingEvent(datetime.strptime(result[1], "%H:%M"), settings["classStartRingpatternId"]))
 			if settings["classStartAssetId"] is not None:
 				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 1", (result[3], )).fetchone()
 				if customfileresult is None:
@@ -146,7 +146,7 @@ def loadTodaysProgramme():
 				events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1))
 			if settings["classEndReminderMin"] != 0:
 				if settings["classEndReminderRingpatternId"] is not None:
-					events.append(OutputEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), settings["classEndReminderRingpatternId"]))
+					events.append(PhysicalRingEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), settings["classEndReminderRingpatternId"]))
 				if settings["classEndReminderAssetId"] is not None:
 					customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 2", (result[3], )).fetchone()
 					if customfileresult is None:
@@ -155,7 +155,7 @@ def loadTodaysProgramme():
 						assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
 					events.append(SoundEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), assetresult[0], 1))
 			if settings["classEndRingpatternId"] is not None:
-				events.append(OutputEvent(datetime.strptime(result[2], "%H:%M"), settings["classEndRingpatternId"]))
+				events.append(PhysicalRingEvent(datetime.strptime(result[2], "%H:%M"), settings["classEndRingpatternId"]))
 			if settings["classEndAssetId"] is not None:
 				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 3", (result[3], )).fetchone()
 				if customfileresult is None:
@@ -179,7 +179,7 @@ def loadTodaysProgramme():
 				events.append(MusicEvent(datetime.strptime(result[1], "%H:%M"), music))
 				events.append(MusicFadeEvent(datetime.strptime(result[2], "%H:%M")-timedelta(seconds=settings["musicFadeOut"]), settings["musicFadeOut"]))
 		if result[0] == 4:
-			events.append(OutputEvent(datetime.strptime(result[1], "%H:%M"), result[4]))
+			events.append(PhysicalRingEvent(datetime.strptime(result[1], "%H:%M"), result[4]))
 
 	loaddb.close()
 
@@ -1032,11 +1032,23 @@ def settings():
 @login_required
 @permission_required("devices")
 def devices():
+	global devices
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	devices = cursor.execute("SELECT id, pin, device_type, pull_up, friendlyname FROM devices").fetchall()
+	dbdevices = cursor.execute("SELECT id, pin, device_type, pull_up, friendlyname, reverse, input FROM devices").fetchall()
+	devicestates = {}
+	for id in devices:
+		devicestates[id] = int(devices[id].value)
 	db.close()
-	return render_template("devices.html", devices=devices)
+	return render_template("devices.html", devices=dbdevices, states=devicestates)
+
+@app.route("/devices/toggle/<int:id>/<int:tostate>")
+@login_required
+@permission_required("devices")
+def toggledevice(id, tostate):
+	global devices
+	devices[id].value = tostate
+	return redirect(url_for('devices'))
 
 @app.route("/devices/delete/<int:id>")
 @login_required
@@ -1060,16 +1072,17 @@ def deletedevice(id):
 @permission_required("devices")
 def adddevice(device_type):
 	global devices
+	# device_type: 1 -> ring
 	if request.method == "POST":
 		db = sqlite3.connect(settings["programmesDb"])
 		cursor = db.cursor()
 	if device_type == "ring":
 		if request.method == "POST":
-			cursor.execute("INSERT INTO devices (friendlyname, pin, input, device_type) VALUES (?, ?, 0, 1)", (request.form.get("name"), request.form.get("pin")))
+			cursor.execute("INSERT INTO devices (friendlyname, pin, input, device_type, reverse) VALUES (?, ?, 0, 1, ?)", (request.form.get("name"), request.form.get("pin"), request.form.get("reverse")))
 			db.commit()
 			id = cursor.execute("SELECT id FROM devices WHERE friendlyname = ?", (request.form.get("name"), )).fetchone()[0]
 			db.close()
-			devices[id] = DigitalOutputDevice(request.form.get("pin"))
+			devices[id] = DigitalOutputDevice(request.form.get("pin"), active_high=not request.form.get("reverse"))
 			flash("Eszköz hozzáadása sikeres!", "success")
 		return render_template("addphysicalring.html")
 	
@@ -1198,16 +1211,16 @@ while True:
 	if lastloaded != time.day:
 		loadTodaysProgramme()
 	for event in events:
-		if event.time.hour == time.hour and event.time.minute == time.minute and isinstance(event, (SoundEvent, MusicEvent, OutputEvent)):
+		if event.time.hour == time.hour and event.time.minute == time.minute and isinstance(event, (SoundEvent, MusicEvent, PhysicalRingEvent)):
 			if isinstance(event, MusicEvent) and musicEnabled == False:
 				events.remove(event)
 				continue
 			if isinstance(event, MusicEvent) and (pygame.mixer.Channel(1).get_busy() == True or pygame.mixer.Channel(0).get_busy() == True):
 				continue
-			if isinstance(event, OutputEvent) and bellEnabled == False:
+			if isinstance(event, PhysicalRingEvent) and bellEnabled == False:
 				events.remove(event)
 				continue
-			if not isinstance(event, (MusicEvent, OutputEvent)):
+			if not isinstance(event, (MusicEvent, PhysicalRingEvent)):
 				if event.type == 1 and bellEnabled == False:
 					events.remove(event)
 					continue
