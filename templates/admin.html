@@ -49,7 +49,7 @@
 <table class="table">
     {% for event in events %}
     <tr>
-        <td>{{ event.time.strftime("%H:%M") }}</td>
+        <td>{{ event.time.strftime("%H:%M:%S") }}</td>
         <td>{{ event.sound }}</td>
         {% if current_user.haspermission("patterns") and current_user.haspermission("playbacks") %}
         <td>

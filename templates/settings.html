@@ -22,6 +22,22 @@
         </div>
     </fieldset>
     <fieldset>
+        <legend>Kapcsolások csengetési rendek elején és végén</legend>
+        <div class="mb-3">
+            <label for="outputDeviceId" class="form-label">Kapcsolandó kimenet:</label>
+            <select name="outputDeviceId" id="outputDeviceId" class="form-select">
+                <option value="">Ne legyen kapcsolás</option>
+                {% for outputdevice in outputdevices %}
+                    <option value="{{ outputdevice[0] }}" {{ 'selected' if outputdevice[0] == settings['outputDeviceId'] }}>{{ outputdevice[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="switchOutputDeviceTime">Kapcsolás az első/utolsó esemény előtt/után ennyi idővel:</label>
+            <input type="number" name="switchOutputDeviceTime" id="switchOutputDeviceTime" class="form-control" required value="{{ settings['switchOutputDeviceTime'] }}"> perccel
+        </div>
+    </fieldset>
+    <fieldset>
         <legend>Dallamcsengetési beállítások</legend>
         <div class="mb-3">
             <label for="classStartAssetId" class="form-label">Becsengetéskor lejátszandó fájl:</label>

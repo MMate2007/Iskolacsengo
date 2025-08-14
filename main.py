@@ -97,6 +97,20 @@ class PhysicalRingEvent():
 			elif command[0] == 2:
 				sleep(command[2])
 
+class OutputEvent():
+	def __init__(self, time, deviceid, tostate):
+		global devices
+		self.time = time
+		self.device = devices[deviceid]
+		self.tostate = tostate
+		if tostate == 1:
+			self.sound = "Erősítő bekapcsolása"
+		elif tostate == 0:
+			self.sound = "Erősítő lekapcsolása"
+
+	def play(self):
+		self.device.value = self.tostate
+
 def readSettings():
 	global settings
 	settings = []
@@ -108,9 +122,9 @@ def loadDevices():
 	devices = {}
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	deviceslist = cursor.execute("SELECT id, pin, device_type, pull_up, reverse FROM devices").fetchall()
+	deviceslist = cursor.execute("SELECT id, pin, input, pull_up, reverse FROM devices").fetchall()
 	for device in deviceslist:
-		if device[2] == 1:
+		if device[2] == False:
 			devices[device[0]] = DigitalOutputDevice(device[1], active_high=not device[4])
 	db.close()
 
@@ -180,7 +194,26 @@ def loadTodaysProgramme():
 				events.append(MusicFadeEvent(datetime.strptime(result[2], "%H:%M")-timedelta(seconds=settings["musicFadeOut"]), settings["musicFadeOut"]))
 		if result[0] == 4:
 			events.append(PhysicalRingEvent(datetime.strptime(result[1], "%H:%M"), result[4]))
-
+	if events and settings['outputDeviceId']:
+		earliesteventtime = min(events, key=lambda x: x.time).time
+		events.append(OutputEvent(earliesteventtime-timedelta(minutes=settings['switchOutputDeviceTime']), settings['outputDeviceId'], 1))
+		latesteventtime = max(events, key=lambda x: x.time).time
+		maxlength = 0
+		for index, value in enumerate(events):
+			if value.time == latesteventtime:
+				if isinstance(value, SoundEvent):
+					length = loadcursor.execute("SELECT length FROM assets WHERE filepath = ?", (value.sound, )).fetchone()[0]
+				elif isinstance(value, PhysicalRingEvent):
+					length = loadcursor.execute("SELECT SUM(time_to_wait) FROM ring_schedule INNER JOIN ring_patterns ON ring_schedule.pattern_id = ring_patterns.id WHERE ring_patterns.friendlyname = ?", (value.sound, )).fetchone()[0]
+				elif isinstance(value, MusicEvent):
+					length = loadcursor.execute("SELECT MAX(end) FROM schedule WHERE start = ? AND schedule_type = ? AND pattern_id = ?", (value.time, 3, patternid)).fetchone()[0]
+				elif isinstance(value, MusicFadeEvent):
+					length = value.fade
+				if length is None:
+						length = 0
+				if length > maxlength:
+					maxlength = length
+		events.append(OutputEvent(latesteventtime+timedelta(seconds=maxlength)+timedelta(minutes=settings['switchOutputDeviceTime']), settings['outputDeviceId'], 0))
 	loaddb.close()
 
 class User():
@@ -1025,8 +1058,9 @@ def settings():
 	cursor = db.cursor()
 	ringtones = cursor.execute("SELECT id, filepath FROM assets WHERE asset_type = 1").fetchall()
 	ringpatterns = cursor.execute("SELECT id, friendlyname FROM ring_patterns").fetchall()
+	outputdevices = cursor.execute("SELECT id, friendlyname FROM devices WHERE device_type = 2 AND input = 0").fetchall()
 	db.close()
-	return render_template("settings.html", ringtones=ringtones, settings=settings, ringpatterns=ringpatterns)
+	return render_template("settings.html", ringtones=ringtones, settings=settings, ringpatterns=ringpatterns, outputdevices=outputdevices)
 
 @app.route("/devices")
 @login_required
@@ -1072,19 +1106,29 @@ def deletedevice(id):
 @permission_required("devices")
 def adddevice(device_type):
 	global devices
-	# device_type: 1 -> ring
+	# device_type: 1 -> ring, 2 -> generaloutput
 	if request.method == "POST":
 		db = sqlite3.connect(settings["programmesDb"])
 		cursor = db.cursor()
 	if device_type == "ring":
 		if request.method == "POST":
-			cursor.execute("INSERT INTO devices (friendlyname, pin, input, device_type, reverse) VALUES (?, ?, 0, 1, ?)", (request.form.get("name"), request.form.get("pin"), request.form.get("reverse")))
+			cursor.execute("INSERT INTO devices (friendlyname, pin, input, device_type, reverse) VALUES (?, ?, 0, 1, ?)", (request.form.get("name"), request.form.get("pin"), request.form.get("reverse") or 0))
 			db.commit()
 			id = cursor.execute("SELECT id FROM devices WHERE friendlyname = ?", (request.form.get("name"), )).fetchone()[0]
 			db.close()
 			devices[id] = DigitalOutputDevice(request.form.get("pin"), active_high=not request.form.get("reverse"))
 			flash("Eszköz hozzáadása sikeres!", "success")
 		return render_template("addphysicalring.html")
+	if device_type == "generaloutput":
+		if request.method == "POST":
+			cursor.execute("INSERT INTO devices (friendlyname, pin, input, device_type, reverse) VALUES (?, ?, 0, 2, ?)", (request.form.get("name"), request.form.get("pin"), request.form.get("reverse") or 0))
+			db.commit()
+			id = cursor.execute("SELECT id FROM devices WHERE friendlyname = ?", (request.form.get("name"), )).fetchone()[0]
+			db.close()
+			devices[id] = DigitalOutputDevice(request.form.get("pin"), active_high=not request.form.get("reverse"))
+			print(devices)
+			flash("Eszköz hozzáadása sikeres!", "success")
+		return render_template("addgeneraloutput.html")
 	
 @app.route("/ring-patterns")
 @login_required
@@ -1231,7 +1275,7 @@ while True:
 					continue
 			event.play()
 			events.remove(event)
-		if time.time().replace(microsecond=0) == event.time.time() and isinstance(event, MusicFadeEvent):
+		if time.time().replace(microsecond=0) == event.time.time() and isinstance(event, MusicFadeEvent, OutputEvent):
 			event.play()
 			events.remove(event)
 	if pygame.mixer.music.get_busy():
