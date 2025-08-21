@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}Eszközkapcsolatok{% endblock %}
+{% block headtitle %}Eszközkapcsolatok{% endblock %}
+{% block content %}
+<a href="{{ url_for('adddeviceconnection') }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Új kapcsolat hozzáadása</a>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Kiváltó eszköz</th>
+                <th>Kiváltó esemény</th>
+                <th>Kapcsolandó eszköz</th>
+                <th>Kapcsolás</th>
+                <th>Műveletek</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for connection in connections %}
+            <tr>
+                <td>
+                    {{ connection[1] }}
+                </td>
+                <td>
+                    {% if connection[2] == 1 %}
+                    gomblenyomás
+                    {% elif connection[2] == 2 %}
+                    gomb felengedése
+                    {% endif %}
+                </td>
+                <td>
+                    {{ connection[3] }}
+                </td>
+                <td>
+                    {% if connection[4] == 0 %}
+                    kikapcsolás
+                    {% elif connection[4] == 1 %}
+                    bekapcsolás
+                    {% elif connection[4] == 2 %}
+                    átkapcsolás
+                    {% endif %}
+                </td>
+                <td>
+                    <a class="btn btn-danger" role="button" href="{{ url_for('deletedeviceconnection', id=connection[0]) }}"><i class="bi bi-trash"></i><span class="d-none d-sm-inline"> Törlés</span></a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

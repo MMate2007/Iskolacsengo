@@ -13,7 +13,7 @@ import threading
 from math import ceil
 from functools import wraps
 import alsaaudio
-from gpiozero import CPUTemperature, DiskUsage, LoadAverage, DigitalOutputDevice
+from gpiozero import CPUTemperature, DiskUsage, LoadAverage, DigitalOutputDevice, Button
 from pydub import AudioSegment, effects
 
 allowedfiles = ["wav", "mp3", "ogg", "m4a"]
@@ -37,6 +37,7 @@ musicEnabled = True
 music = []
 musicpos = 0
 devices = {}
+deviceConnections = {}
 
 class SoundEvent():
 	def __init__(self, time, sound, type):
@@ -111,6 +112,38 @@ class OutputEvent():
 	def play(self):
 		self.device.value = self.tostate
 
+class DeviceConnection():
+	def __init__(self, input_device, trigger_event, target_device, action):
+		global devices
+		self.input_device = input_device
+		self.trigger_event = trigger_event
+		self.target_device = target_device
+		self.action = action
+		if trigger_event == 1:
+			# when_pressed
+			devices[input_device].when_pressed = self.do_action
+		elif trigger_event == 2:
+			# when_released
+			devices[input_device].when_released = self.do_action
+	
+	def do_action(self):
+		global devices
+		if self.action == 0 or self.action == 1:
+			# manually switch on or off
+			tostate = self.action
+		elif self.action == 2:
+			# flip state
+			tostate = not devices[self.target_device].value
+		devices[self.target_device].value = tostate
+
+	def delete(self):
+		if self.trigger_event == 1:
+			# when_pressed
+			devices[self.input_device].when_pressed = None
+		elif self.trigger_event == 2:
+			# when_released
+			devices[self.input_device].when_released = None
+
 def readSettings():
 	global settings
 	settings = []
@@ -126,6 +159,17 @@ def loadDevices():
 	for device in deviceslist:
 		if device[2] == False:
 			devices[device[0]] = DigitalOutputDevice(device[1], active_high=not device[4])
+		if device[2] == True:
+			devices[device[0]] = Button(device[1], pull_up=device[3], bounce_time=0.01)
+	db.close()
+
+def makeDeviceConnections():
+	global devices, deviceConnections
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	connections = cursor.execute("SELECT id, input_device, trigger_event, target_device, action FROM device_connections").fetchall()
+	for connection in connections:
+		deviceConnections[connection[0]] = DeviceConnection(connection[1], connection[2], connection[3], connection[4])
 	db.close()
 
 def loadTodaysProgramme():
@@ -1094,6 +1138,7 @@ def deletedevice(id):
 	device_type = cursor.execute("SELECT device_type FROM devices WHERE id = ?", (id, )).fetchone()
 	if device_type == 1:
 		cursor.execute("DELETE FROM ring_schedules WHERE device_id = ?", (id, ))
+	cursor.execute("DELETE FROM device_connections WHERE input_device = ? OR target_device = ?", (id, id))
 	cursor.execute("DELETE FROM devices WHERE id = ?", (id, ))
 	devices.pop(id)
 	db.commit()
@@ -1106,7 +1151,7 @@ def deletedevice(id):
 @permission_required("devices")
 def adddevice(device_type):
 	global devices
-	# device_type: 1 -> ring, 2 -> generaloutput
+	# device_type: 1 -> ring, 2 -> generaloutput, 3 -> button
 	if request.method == "POST":
 		db = sqlite3.connect(settings["programmesDb"])
 		cursor = db.cursor()
@@ -1126,10 +1171,59 @@ def adddevice(device_type):
 			id = cursor.execute("SELECT id FROM devices WHERE friendlyname = ?", (request.form.get("name"), )).fetchone()[0]
 			db.close()
 			devices[id] = DigitalOutputDevice(request.form.get("pin"), active_high=not request.form.get("reverse"))
-			print(devices)
 			flash("Eszköz hozzáadása sikeres!", "success")
 		return render_template("addgeneraloutput.html")
-	
+	if device_type == "button":
+		if request.method == "POST":
+			cursor.execute("INSERT INTO devices (friendlyname, pin, input, device_type, pull_up) VALUES (?, ?, 1, 3, ?)", (request.form.get("name"), request.form.get("pin"), request.form.get("pull_up")))
+			db.commit()
+			id = cursor.execute("SELECT id FROM devices WHERE friendlyname = ?", (request.form.get("name"), )).fetchone()[0]
+			db.close()
+			devices[id] = Button(request.form.get("pin"), pull_up=bool(request.form.get("pull_up")))
+			flash("Eszköz hozzáadása sikeres!", "success")
+		return render_template("addbutton.html")
+
+@app.route("/devices/connections")
+@login_required
+@permission_required("devices")
+def listdeviceconnections():
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	connections = cursor.execute("SELECT device_connections.id, d1.friendlyname, trigger_event, d2.friendlyname, action FROM device_connections INNER JOIN devices AS d1 ON input_device = d1.id INNER JOIN devices AS d2 ON target_device = d2.id").fetchall()
+	db.close()
+	return render_template("listdeviceconnections.html", connections=connections)
+
+@app.route("/devices/connections/add", methods=("GET", "POST"))
+@login_required
+@permission_required("devices")
+def adddeviceconnection():
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	if request.method == "POST":
+		cursor.execute("INSERT INTO device_connections (input_device, trigger_event, target_device, action) VALUES (?,?,?,?)", (request.form.get("input"), request.form.get("trigger"), request.form.get("target"), request.form.get("action")))
+		deviceConnections[cursor.lastrowid] = DeviceConnection(int(request.form.get("input")), int(request.form.get("trigger")), int(request.form.get("target")), int(request.form.get("action")))
+		flash("Sikeres kapcsolat hozzáadása!", "success")
+		db.commit()
+		db.close()
+		return redirect(url_for("listdeviceconnections"))
+	devices = cursor.execute("SELECT id, friendlyname, input FROM devices ORDER BY friendlyname").fetchall()
+	db.close()
+	return render_template("adddeviceconnection.html", devices=devices)
+
+@app.route("/devices/connections/<int:id>/delete")
+@login_required
+@permission_required("devices")
+def deletedeviceconnection(id):
+	deviceConnections[id].delete()
+	deviceConnections.pop(id)
+	db = sqlite3.connect(settings["programmesDb"])
+	cursor = db.cursor()
+	cursor.execute("DELETE FROM device_connections WHERE id = ?", (id, ))
+	db.commit()
+	db.close()
+	flash("Eszközkapcsolat törlése sikeres!", "success")
+	return redirect(url_for("listdeviceconnections"))
+
 @app.route("/ring-patterns")
 @login_required
 @permission_required("ringpatterns")
@@ -1241,6 +1335,7 @@ def deleteringpattern(id):
 
 readSettings()
 loadDevices()
+makeDeviceConnections()
 loadTodaysProgramme()
 thread = threading.Thread(target=lambda: app.run(debug=True, host="0.0.0.0", use_reloader=False))
 thread.daemon = True

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}Nyomógomb hozzáadása{% endblock %}
+{% block headtitle %}Nyomógomb hozzáadása{% endblock %}
+{% block content %}
+
+<form method="post" action="#">
+    <div class="mb-3">
+        <label for="name" class="form-label">Név:</label>
+        <input type="text" name="name" id="name" class="form-control">
+    </div>
+    <div class="mb-3">
+        <label for="pin" class="form-label">Tüske (Broadcom BCM számozás alapján):</label>
+        <input type="number" name="pin" id="pin" class="form-control">
+    </div>
+    <div class="mb-3">
+        <label for="pull_up_check">Belső ellenállás</label>
+        <div id="pull_up_check">
+            <div class="form-check form-check-inline">
+                <input type="radio" name="pull_up" value="0" required id="pulldown" class="form-check-input">
+                <label for="pulldown" class="form-check-label">GND felé</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input type="radio" name="pull_up" value="1" id="pullup" class="form-check-input">
+                <label for="pullup" class="form-check-label">3.3V felé</label>
+            </div>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Mentés</button>
+</form>
+
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}Eszközkapcsolat hozzáadása{% endblock %}
+{% block headtitle %}Eszközkapcsolat hozzáadása{% endblock %}
+{% block content %}
+
+<form method="post" action="#">
+    <fieldset>
+        <legend>Bemenet</legend>
+        <div class="mb-3">
+            <label for="input" class="form-label">Kiváltó eszköz:</label>
+            <select name="input" id="input" class="form-select" required>
+                {% for device in devices %}
+                    {% if device[2] %}
+                    <option value="{{ device[0] }}">{{ device[1] }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="trigger" class="form-label">Kiváltó esemény:</label>
+            <select name="trigger" class="form-select" id="trigger" required>
+                <option value="1">gomb lenyomása</option>
+                <option value="2">gomb felengedése</option>
+            </select>
+        </div>
+    </fieldset>
+    <fieldset>
+        <legend>Kimenet</legend>
+        <div class="mb-3">
+            <label for="target" class="form-label">Kapcsolandó eszköz:</label>
+            <select name="target" id="target" class="form-select" required>
+                {% for device in devices %}
+                    {% if not device[2] %}
+                    <option value="{{ device[0] }}">{{ device[1] }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="action" class="form-label">Kapcsolás:</label>
+            <select name="action" class="form-select" id="action" required>
+                <option value="0">kikapcsolás</option>
+                <option value="1">bekapcsolás</option>
+                <option value="2">átkapcsolás (kikapcsolt eszközt bekapcsolja, bekapcsolt eszközt kikapcsolja)</option>
+            </select>
+        </div>
+    </fieldset>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Mentés</button>
+</form>
+
+{% endblock %}

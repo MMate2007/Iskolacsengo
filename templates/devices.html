@@ -6,6 +6,7 @@
 {% block content %}
 <a href="{{ url_for('adddevice', device_type='ring') }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Fizikai csengő hozzáadása</a>
 <a href="{{ url_for('adddevice', device_type='generaloutput') }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Kimenet hozzáadása</a>
+<a href="{{ url_for('adddevice', device_type='button') }}" class="btn btn-primary" role="button"><i class="bi bi-plus-lg"></i> Nyomógomb hozzáadása</a>
 <div class="table-responsive">
     <table class="table">
         <thead>
@@ -29,6 +30,8 @@
                     fizikai csengő
                     {% elif device[2] == 2 %}
                     kimenet
+                    {% elif device[2] == 3 %}
+                    nyomógomb
                     {% endif %}
                 </td>
                 <td>

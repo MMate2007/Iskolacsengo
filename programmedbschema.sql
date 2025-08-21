@@ -50,6 +50,14 @@ CREATE TABLE devices (
     pull_up BOOLEAN,
 	reverse BOOLEAN NOT NULL DEFAULT FALSE
 );
+DROP TABLE IF EXISTS device_connections;
+CREATE TABLE device_connections (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    input_device INTEGER NOT NULL,
+	trigger_event INTEGER NOT NULL,
+	target_device INTEGER NOT NULL,
+	action INTEGER NOT NULL
+);
 DROP TABLE IF EXISTS ring_patterns;
 CREATE TABLE ring_patterns (
 	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
