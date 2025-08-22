@@ -241,23 +241,22 @@ def loadTodaysProgramme():
 	if events and settings['outputDeviceId']:
 		earliesteventtime = min(events, key=lambda x: x.time).time
 		events.append(OutputEvent(earliesteventtime-timedelta(minutes=settings['switchOutputDeviceTime']), settings['outputDeviceId'], 1))
-		latesteventtime = max(events, key=lambda x: x.time).time
-		maxlength = 0
+		latestfinishtime = earliesteventtime
 		for index, value in enumerate(events):
-			if value.time == latesteventtime:
-				if isinstance(value, SoundEvent):
-					length = loadcursor.execute("SELECT length FROM assets WHERE filepath = ?", (value.sound, )).fetchone()[0]
-				elif isinstance(value, PhysicalRingEvent):
-					length = loadcursor.execute("SELECT SUM(time_to_wait) FROM ring_schedule INNER JOIN ring_patterns ON ring_schedule.pattern_id = ring_patterns.id WHERE ring_patterns.friendlyname = ?", (value.sound, )).fetchone()[0]
-				elif isinstance(value, MusicEvent):
-					length = loadcursor.execute("SELECT MAX(end) FROM schedule WHERE start = ? AND schedule_type = ? AND pattern_id = ?", (value.time, 3, patternid)).fetchone()[0]
-				elif isinstance(value, MusicFadeEvent):
-					length = value.fade
-				if length is None:
-						length = 0
-				if length > maxlength:
-					maxlength = length
-		events.append(OutputEvent(latesteventtime+timedelta(seconds=maxlength)+timedelta(minutes=settings['switchOutputDeviceTime']), settings['outputDeviceId'], 0))
+			if isinstance(value, SoundEvent):
+				length = loadcursor.execute("SELECT length FROM assets WHERE filepath = ?", (value.sound, )).fetchone()[0]
+			elif isinstance(value, PhysicalRingEvent):
+				length = loadcursor.execute("SELECT SUM(time_to_wait) FROM ring_schedule INNER JOIN ring_patterns ON ring_schedule.pattern_id = ring_patterns.id WHERE ring_patterns.friendlyname = ?", (value.sound, )).fetchone()[0]
+			elif isinstance(value, MusicEvent):
+				length = loadcursor.execute("SELECT MAX(end) FROM schedule WHERE start = ? AND schedule_type = ? AND pattern_id = ?", (value.time, 3, patternid)).fetchone()[0]
+			elif isinstance(value, MusicFadeEvent):
+				length = value.fade
+			if length is None:
+					length = 0
+			finishtime = value.time+timedelta(seconds=length)
+			if finishtime > latestfinishtime:
+				latestfinishtime = finishtime
+		events.append(OutputEvent(latestfinishtime+timedelta(minutes=settings['switchOutputDeviceTime']), settings['outputDeviceId'], 0))
 	loaddb.close()
 
 class User():
