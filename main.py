@@ -172,23 +172,19 @@ def makeDeviceConnections():
 		deviceConnections[connection[0]] = DeviceConnection(connection[1], connection[2], connection[3], connection[4])
 	db.close()
 
-def loadTodaysProgramme():
-	global events, lastloaded, settings
+def loadProgramme(date):
+	global settings
+	day = date.strftime("%Y-%m-%d")
 	events = []
-	lastloaded = datetime.now().day
 	loaddb = sqlite3.connect(settings["programmesDb"])
 	loadcursor = loaddb.cursor()
-	loadcursor.execute("DELETE FROM dates WHERE date < DATE('now', 'localtime')")
-	loadcursor.execute("DELETE FROM customsounds WHERE date < DATE('now', 'localtime')")
-	loadcursor.execute("DELETE FROM playbacks WHERE date < DATE('now', 'localtime')")
-	loaddb.commit()
-	results = loadcursor.execute("SELECT time, filepath FROM playbacks INNER JOIN assets ON playbacks.asset_id = assets.id WHERE date = DATE('now', 'localtime') ORDER BY time").fetchall()
+	results = loadcursor.execute("SELECT time, filepath FROM playbacks INNER JOIN assets ON playbacks.asset_id = assets.id WHERE date = ? ORDER BY time", (day, )).fetchall()
 	for result in results:
 		events.append(SoundEvent(datetime.strptime(result[0], "%H:%M"), result[1], 2))
-	result = loadcursor.execute("SELECT pattern_id FROM dates WHERE date = DATE('now', 'localtime')").fetchone()
+	result = loadcursor.execute("SELECT pattern_id FROM dates WHERE date = ?", (day, )).fetchone()
 	if result is None:
 		loaddb.close()
-		return
+		return events
 	patternid = result[0]
 	results = loadcursor.execute("SELECT schedule_type, start, end, id, asset_id FROM schedule WHERE pattern_id = ? ORDER BY start, schedule_type", (patternid,)).fetchall()
 	for result in results:
@@ -196,7 +192,7 @@ def loadTodaysProgramme():
 			if settings["classStartRingpatternId"] is not None:
 				events.append(PhysicalRingEvent(datetime.strptime(result[1], "%H:%M"), settings["classStartRingpatternId"]))
 			if settings["classStartAssetId"] is not None:
-				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 1", (result[3], )).fetchone()
+				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = ? AND schedule_id = ? AND params = 1", (day, result[3])).fetchone()
 				if customfileresult is None:
 					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classStartAssetId"],)).fetchone()
 				else:
@@ -206,7 +202,7 @@ def loadTodaysProgramme():
 				if settings["classEndReminderRingpatternId"] is not None:
 					events.append(PhysicalRingEvent(datetime.strptime(result[2], "%H:%M")-timedelta(minutes=settings["classEndReminderMin"]), settings["classEndReminderRingpatternId"]))
 				if settings["classEndReminderAssetId"] is not None:
-					customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 2", (result[3], )).fetchone()
+					customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = ? AND schedule_id = ? AND params = 2", (day, result[3])).fetchone()
 					if customfileresult is None:
 						assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classEndReminderAssetId"],)).fetchone()
 					else:
@@ -215,21 +211,21 @@ def loadTodaysProgramme():
 			if settings["classEndRingpatternId"] is not None:
 				events.append(PhysicalRingEvent(datetime.strptime(result[2], "%H:%M"), settings["classEndRingpatternId"]))
 			if settings["classEndAssetId"] is not None:
-				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ? AND params = 3", (result[3], )).fetchone()
+				customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = ? AND schedule_id = ? AND params = 3", (day, result[3])).fetchone()
 				if customfileresult is None:
 					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (settings["classEndAssetId"],)).fetchone()
 				else:
 					assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
 				events.append(SoundEvent(datetime.strptime(result[2], "%H:%M"), assetresult[0], 1))
 		if result[0] == 2:
-			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = DATE('now', 'localtime') AND schedule_id = ?", (result[3], )).fetchone()
+			customfileresult = loadcursor.execute("SELECT asset_id FROM customsounds WHERE date = ? AND schedule_id = ?", (day, result[3])).fetchone()
 			if customfileresult is None:
 				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (result[4],)).fetchone()
 			else:
 				assetresult = loadcursor.execute("SELECT filepath FROM assets WHERE id = ?", (customfileresult[0],)).fetchone()
 			events.append(SoundEvent(datetime.strptime(result[1], "%H:%M"), assetresult[0], 1))
 		if result[0] == 3:
-			getmusic = loadcursor.execute("SELECT filepath FROM assets INNER JOIN customsounds ON assets.id = customsounds.asset_id WHERE customsounds.date = DATE('now', 'localtime') AND customsounds.schedule_id = ? ORDER BY customsounds.params DESC", (result[3], )).fetchall()
+			getmusic = loadcursor.execute("SELECT filepath FROM assets INNER JOIN customsounds ON assets.id = customsounds.asset_id WHERE customsounds.date = ? AND customsounds.schedule_id = ? ORDER BY customsounds.params DESC", (day, result[3])).fetchall()
 			if getmusic != []:
 				music = []
 				for entry in getmusic:
@@ -258,6 +254,20 @@ def loadTodaysProgramme():
 				latestfinishtime = finishtime
 		events.append(OutputEvent(latestfinishtime+timedelta(minutes=settings['switchOutputDeviceTime']), settings['outputDeviceId'], 0))
 	loaddb.close()
+	return events
+
+def loadTodaysProgramme():
+	global events, lastloaded, settings
+	loaddb = sqlite3.connect(settings["programmesDb"])
+	loadcursor = loaddb.cursor()
+	loadcursor.execute("DELETE FROM dates WHERE date < DATE('now', 'localtime')")
+	loadcursor.execute("DELETE FROM customsounds WHERE date < DATE('now', 'localtime')")
+	loadcursor.execute("DELETE FROM playbacks WHERE date < DATE('now', 'localtime')")
+	loaddb.commit()
+	loaddb.close()
+	events = []
+	lastloaded = datetime.now().day
+	events = loadProgramme(datetime.now())
 
 class User():
 	def __init__(self, id):
@@ -515,6 +525,12 @@ def viewdates():
 	results = cursor.execute("SELECT date, friendlyname, EXISTS(SELECT 1 FROM customsounds INNER JOIN schedule ON customsounds.schedule_id = schedule.id WHERE customsounds.date = dates.date AND schedule.schedule_type != 3), EXISTS(SELECT 1 FROM customsounds INNER JOIN schedule ON customsounds.schedule_id = schedule.id WHERE customsounds.date = dates.date AND schedule.schedule_type = 3), EXISTS(SELECT 1 FROM playbacks WHERE playbacks.date = dates.date), EXISTS(SELECT 1 FROM schedule WHERE schedule_type = 3 AND schedule.pattern_id = patterns.id) FROM dates INNER JOIN patterns ON dates.pattern_id = patterns.id ORDER BY date").fetchall()
 	db.close()
 	return render_template("viewdates.html", dates=results)
+
+@app.route("/viewprogrammes/<date>")
+@login_required
+def viewdate(date):
+	programmes = loadProgramme(datetime.strptime(date, "%Y-%m-%d"))
+	return render_template("viewdate.html", events=programmes, date=datetime.strptime(date, "%Y-%m-%d").strftime("%Y. %m. %d."))
 
 @app.route("/deletedate/<date>")
 @login_required

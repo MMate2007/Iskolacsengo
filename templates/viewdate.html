@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block customstyle %}
+{% endblock %}
+{% block title %}Nap előnézete - {{ date }}{% endblock %}
+{% block headtitle %}Nap előnézete - {{ date }}{% endblock %}
+{% block content %}
+<table class="table">
+    {% for event in events %}
+    <tr>
+        <td>{{ event.time.strftime("%H:%M:%S") }}</td>
+        <td>{{ event.sound }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
