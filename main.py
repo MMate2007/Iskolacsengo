@@ -38,6 +38,7 @@ music = []
 musicpos = 0
 devices = {}
 deviceConnections = {}
+emulateDeviceOperations = False
 
 class SoundEvent():
 	def __init__(self, time, sound, type):
@@ -112,6 +113,32 @@ class OutputEvent():
 	def play(self):
 		self.device.value = self.tostate
 
+class CustomOutputDevice(DigitalOutputDevice):
+	def __init__(self, pin=None, *, active_high=True, initial_value=False, pin_factory=None):
+		super().__init__(pin, active_high=active_high, initial_value=initial_value, pin_factory=pin_factory)
+		self._value = initial_value
+
+	@property
+	def value(self):
+		global emulateDeviceOperations
+		if emulateDeviceOperations:
+			return self._value
+		else:
+			return super().value
+		
+	@value.setter
+	def value(self, value):
+		self._value = value
+		global emulateDeviceOperations
+		if not emulateDeviceOperations:
+			self.flush()
+
+	def flush(self):
+		if self._value == 1:
+			self.on()
+		elif self._value == 0:
+			self.off()
+
 class DeviceConnection():
 	def __init__(self, input_device, trigger_event, target_device, action):
 		global devices
@@ -158,7 +185,7 @@ def loadDevices():
 	deviceslist = cursor.execute("SELECT id, pin, input, pull_up, reverse FROM devices").fetchall()
 	for device in deviceslist:
 		if device[2] == False:
-			devices[device[0]] = DigitalOutputDevice(device[1], active_high=not device[4])
+			devices[device[0]] = CustomOutputDevice(device[1], active_high=not device[4])
 		if device[2] == True:
 			devices[device[0]] = Button(device[1], pull_up=device[3], bounce_time=0.01)
 	db.close()
@@ -268,6 +295,18 @@ def loadTodaysProgramme():
 	events = []
 	lastloaded = datetime.now().day
 	events = loadProgramme(datetime.now())
+
+def setDeviceState():
+	global events, emulateDeviceOperations
+	emulateDeviceOperations = True
+	for event in events:
+		if isinstance(event, OutputEvent):
+			if event.time <= datetime.strptime(datetime.now().strftime("%H:%M:%S"), "%H:%M:%S"):
+				event.play()
+	emulateDeviceOperations = False
+	for device in devices.values():
+		if isinstance(device, CustomOutputDevice):
+			device.flush()
 
 class User():
 	def __init__(self, id):
@@ -1176,7 +1215,7 @@ def adddevice(device_type):
 			db.commit()
 			id = cursor.execute("SELECT id FROM devices WHERE friendlyname = ?", (request.form.get("name"), )).fetchone()[0]
 			db.close()
-			devices[id] = DigitalOutputDevice(request.form.get("pin"), active_high=not request.form.get("reverse"))
+			devices[id] = CustomOutputDevice(request.form.get("pin"), active_high=not request.form.get("reverse"))
 			flash("Eszköz hozzáadása sikeres!", "success")
 		return render_template("addphysicalring.html")
 	if device_type == "generaloutput":
@@ -1185,7 +1224,7 @@ def adddevice(device_type):
 			db.commit()
 			id = cursor.execute("SELECT id FROM devices WHERE friendlyname = ?", (request.form.get("name"), )).fetchone()[0]
 			db.close()
-			devices[id] = DigitalOutputDevice(request.form.get("pin"), active_high=not request.form.get("reverse"))
+			devices[id] = CustomOutputDevice(request.form.get("pin"), active_high=not request.form.get("reverse"))
 			flash("Eszköz hozzáadása sikeres!", "success")
 		return render_template("addgeneraloutput.html")
 	if device_type == "button":
@@ -1350,8 +1389,9 @@ def deleteringpattern(id):
 
 readSettings()
 loadDevices()
-makeDeviceConnections()
 loadTodaysProgramme()
+setDeviceState()
+makeDeviceConnections()
 thread = threading.Thread(target=lambda: app.run(debug=True, host="0.0.0.0", use_reloader=False))
 thread.daemon = True
 thread.start()
@@ -1385,7 +1425,7 @@ while True:
 					continue
 			event.play()
 			events.remove(event)
-		if time.time().replace(microsecond=0) == event.time.time() and isinstance(event, MusicFadeEvent, OutputEvent):
+		if time.time().replace(microsecond=0) == event.time.time() and isinstance(event, (MusicFadeEvent, OutputEvent)):
 			event.play()
 			events.remove(event)
 	if pygame.mixer.music.get_busy():
