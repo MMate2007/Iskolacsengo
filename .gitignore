@@ -4,3 +4,4 @@ programmes.db
 users.db
 devices.db
 assets
+__pycache__
