@@ -11,7 +11,9 @@ CREATE TABLE schedule (
 	schedule_type INTEGER NOT NULL,
 	start TIME NOT NULL,
 	end TIME,
-	asset_id INTEGER
+	asset_id INTEGER,
+	device_id INTEGER,
+	tostate BOOLEAN
 );
 DROP TABLE IF EXISTS dates;
 CREATE TABLE dates (

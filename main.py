@@ -101,14 +101,19 @@ class PhysicalRingEvent():
 
 class OutputEvent():
 	def __init__(self, time, deviceid, tostate):
-		global devices
+		global devices, settings
 		self.time = time
 		self.device = devices[deviceid]
+		self.deviceid = deviceid
 		self.tostate = tostate
+		db = sqlite3.connect(settings["programmesDb"])
+		cursor = db.cursor()
+		name = cursor.execute("SELECT friendlyname FROM devices WHERE id = ?", (deviceid, )).fetchone()[0]
+		db.close()
 		if tostate == 1:
-			self.sound = "Erősítő bekapcsolása"
+			self.sound = f"{name} bekapcsolása"
 		elif tostate == 0:
-			self.sound = "Erősítő lekapcsolása"
+			self.sound = f"{name} lekapcsolása"
 
 	def play(self):
 		self.device.value = self.tostate
@@ -213,7 +218,7 @@ def loadProgramme(date):
 		loaddb.close()
 		return events
 	patternid = result[0]
-	results = loadcursor.execute("SELECT schedule_type, start, end, id, asset_id FROM schedule WHERE pattern_id = ? ORDER BY start, schedule_type", (patternid,)).fetchall()
+	results = loadcursor.execute("SELECT schedule_type, start, end, id, asset_id, device_id, tostate FROM schedule WHERE pattern_id = ? ORDER BY start, schedule_type", (patternid,)).fetchall()
 	for result in results:
 		if result[0] == 1:
 			if settings["classStartRingpatternId"] is not None:
@@ -261,9 +266,17 @@ def loadProgramme(date):
 				events.append(MusicFadeEvent(datetime.strptime(result[2], "%H:%M")-timedelta(seconds=settings["musicFadeOut"]), settings["musicFadeOut"]))
 		if result[0] == 4:
 			events.append(PhysicalRingEvent(datetime.strptime(result[1], "%H:%M"), result[4]))
+		if result[0] == 5:
+			events.append(OutputEvent(datetime.strptime(result[1], "%H:%M"), result[5], result[6]))
 	if events and settings['outputDeviceId']:
-		earliesteventtime = min(events, key=lambda x: x.time).time
-		events.append(OutputEvent(earliesteventtime-timedelta(minutes=settings['switchOutputDeviceTime']), settings['outputDeviceId'], 1))
+		earliestevent = min(events, key=lambda x: x.time)
+		earliesteventtime = earliestevent.time
+		auto = True
+		if isinstance(earliestevent, OutputEvent):
+			if earliestevent.deviceid == settings['outputDeviceId']:
+				auto = False
+		if auto:
+			events.append(OutputEvent(earliesteventtime-timedelta(minutes=settings['switchOutputDeviceTime']), settings['outputDeviceId'], 1))
 		latestfinishtime = earliesteventtime
 		for index, value in enumerate(events):
 			if isinstance(value, SoundEvent):
@@ -274,12 +287,18 @@ def loadProgramme(date):
 				length = loadcursor.execute("SELECT MAX(end) FROM schedule WHERE start = ? AND schedule_type = ? AND pattern_id = ?", (value.time, 3, patternid)).fetchone()[0]
 			elif isinstance(value, MusicFadeEvent):
 				length = value.fade
-			if length is None:
-					length = 0
+			else:
+				length = 0
 			finishtime = value.time+timedelta(seconds=length)
 			if finishtime > latestfinishtime:
 				latestfinishtime = finishtime
-		events.append(OutputEvent(latestfinishtime+timedelta(minutes=settings['switchOutputDeviceTime']), settings['outputDeviceId'], 0))
+				latestfinishevent = value
+		auto = True
+		if isinstance(latestfinishevent, OutputEvent):
+			if latestfinishevent.deviceid == settings['outputDeviceId']:
+				auto = False
+		if auto:
+			events.append(OutputEvent(latestfinishtime+timedelta(minutes=settings['switchOutputDeviceTime']), settings['outputDeviceId'], 0))
 	loaddb.close()
 	return events
 
@@ -661,7 +680,7 @@ def renamepattern(id):
 def viewschedule(id):
 	db = sqlite3.connect(settings["programmesDb"])
 	cursor = db.cursor()
-	results = cursor.execute("SELECT schedule.id, schedule_type, start, end, filepath, (SELECT friendlyname FROM ring_patterns WHERE ring_patterns.id = asset_id) FROM schedule LEFT OUTER JOIN assets ON schedule.asset_id = assets.id WHERE pattern_id = ? ORDER BY start, schedule_type", (id,)).fetchall()
+	results = cursor.execute("SELECT schedule.id, schedule_type, start, end, filepath, (SELECT friendlyname FROM ring_patterns WHERE ring_patterns.id = asset_id), devices.friendlyname, tostate FROM schedule LEFT OUTER JOIN assets ON schedule.asset_id = assets.id LEFT OUTER JOIN devices ON schedule.device_id = devices.id WHERE pattern_id = ? ORDER BY start, schedule_type", (id,)).fetchall()
 	name = cursor.execute("SELECT friendlyname FROM patterns WHERE id = ?", (id,)).fetchone()
 	db.close()
 	return render_template("viewschedule.html", schedule=results, pattern_name=name[0], patternid=id)
@@ -738,6 +757,22 @@ def addevent(patternid, eventtype):
 		ringtones = cursor.execute("SELECT id, friendlyname FROM ring_patterns").fetchall()
 		db.close()
 		return render_template("addring.html", pattern_name=name[0], ringtones=ringtones)
+	elif eventtype == 5:
+		if request.method == "POST":
+			deviceid = request.form.get("device")
+			tostate = request.form.get("switch")
+			time = request.form.get("time")
+			db = sqlite3.connect(settings["programmesDb"])
+			cursor = db.cursor()
+			cursor.execute("INSERT INTO schedule (pattern_id, schedule_type, start, device_id, tostate) VALUES (?,5,?,?,?)", (patternid,time,deviceid,tostate))
+			db.commit()
+			db.close()
+			flash("Kimenetvezérlés hozzáadása sikeres!", "success")
+		db = sqlite3.connect(settings["programmesDb"])
+		cursor = db.cursor()
+		outputdevices = cursor.execute("SELECT id, friendlyname FROM devices WHERE device_type = 2 AND input = 0").fetchall()
+		db.close()
+		return render_template("addringswitch.html", devices=outputdevices, pattern_name=name[0], timeinput=True)
 	return render_template("addlesson.html", pattern_name=name[0])
 
 

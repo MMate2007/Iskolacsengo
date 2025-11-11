@@ -6,6 +6,12 @@
 {% block content %}
 
 <form method="post" action="#">
+    {% if timeinput %}
+    <div class="mb-3">
+        <label for="time" class="form-label">Idő:</label>
+        <input type="time" class="form-control" name="time" id="time" autofocus required>
+    </div>
+    {% endif %}
     <div class="mb-3">
         <label for="device" class="form-label">Eszköz:</label>
         <select name="device" id="device" class="form-select" required>
