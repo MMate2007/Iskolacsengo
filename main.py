@@ -284,7 +284,9 @@ def loadProgramme(date):
 			elif isinstance(value, PhysicalRingEvent):
 				length = loadcursor.execute("SELECT SUM(time_to_wait) FROM ring_schedule INNER JOIN ring_patterns ON ring_schedule.pattern_id = ring_patterns.id WHERE ring_patterns.friendlyname = ?", (value.sound, )).fetchone()[0]
 			elif isinstance(value, MusicEvent):
-				length = loadcursor.execute("SELECT MAX(end) FROM schedule WHERE start = ? AND schedule_type = ? AND pattern_id = ?", (value.time, 3, patternid)).fetchone()[0]
+				end = loadcursor.execute("SELECT MAX(end) FROM schedule WHERE start = ? AND schedule_type = ? AND pattern_id = ?", (value.time.strftime("%H:%M"), 3, patternid)).fetchone()[0]
+				diff = datetime.strptime(end, "%H:%S") - value.time
+				length = diff.total_seconds()
 			elif isinstance(value, MusicFadeEvent):
 				length = value.fade
 			else:
