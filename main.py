@@ -4,8 +4,9 @@ import os
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 import pygame
 from datetime import datetime, timedelta
-from time import sleep
-from flask import Flask, render_template, request, url_for, redirect, flash, Markup
+from time import sleep, time
+from flask import Flask, render_template, request, url_for, redirect, flash
+from markupsafe import Markup
 import bcrypt
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
@@ -15,6 +16,11 @@ from functools import wraps
 import alsaaudio
 from gpiozero import CPUTemperature, DiskUsage, LoadAverage, DigitalOutputDevice, Button
 from pydub import AudioSegment, effects
+import gi
+gi.require_version('Gst', '1.0')
+from gi.repository import Gst, GLib
+
+Gst.init(None)
 
 allowedfiles = ["wav", "mp3", "ogg", "m4a"]
 
@@ -22,8 +28,10 @@ app = Flask(__name__)
 app.secret_key = "valami"
 loginmanager = LoginManager()
 loginmanager.init_app(app)
+
 pygame.mixer.init(buffer=2048, channels=4)
 alsamixer = alsaaudio.Mixer()
+
 with open("settings.json") as f:
 		settings = json.load(f)
 app.config["UPLOAD_FOLDER"] = settings["uploadFolder"]
@@ -40,6 +48,81 @@ devices = {}
 deviceConnections = {}
 emulateDeviceOperations = False
 
+class GStreamerEngine:
+	def __init__(self, name: str):
+		self.pipeline = Gst.Pipeline.new("master_pipeline")
+		self.interleave = Gst.ElementFactory.make("interleave", "master_interleave")
+		audioconvert = Gst.ElementFactory.make("audioconvert", "convert_before_jack")
+		audioresample = Gst.ElementFactory.make("audioresample", "resample_before_jack")
+		sink = Gst.ElementFactory.make("jackaudiosink", "master_sink")
+		sink.set_property("client-name", name)
+		
+		for i in [self.interleave, audioconvert, audioresample, sink]:
+			self.pipeline.add(i)
+
+		self.interleave.link(audioconvert)
+		audioconvert.link(audioresample)
+		audioresample.link(sink)
+
+		bus = self.pipeline.get_bus()
+		bus.add_signal_watch()
+		bus.connect("message::eos", self._cleanupafterfileplyback)
+
+	def _cleanupafterfileplyback(self, bus, message):
+		finished_bin = message.src.get_parent() 
+		if finished_bin and "playbin_" in finished_bin.get_name():
+			finished_bin.set_state(Gst.State.NULL)
+			src_pad = finished_bin.get_static_pad("src")
+			peer_pad = src_pad.get_peer()
+			if peer_pad:
+				src_pad.unlink(peer_pad)
+				peer_pad.get_parent().release_request_pad(peer_pad)
+			self.pipeline.remove(finished_bin)
+
+class AudioChannel:
+	def __init__(self, engine: GStreamerEngine, name: str):
+		self.engine = engine
+		self.mixer = Gst.ElementFactory.make("audiomixer", f"mixer_{name}")
+
+		caps = Gst.Caps.from_string("audio/x-raw,channels=1")
+		capsfilter = Gst.ElementFactory.make("capsfilter", f"filter_{name}")
+		capsfilter.set_property("caps", caps)
+
+		for i in [self.mixer, capsfilter]:
+			self.engine.pipeline.add(i)
+
+		self.mixer.link(capsfilter)
+
+		interleave_pad = self.engine.interleave.request_pad_simple("sink_%u")
+		filter_src_pad = capsfilter.get_static_pad("src")
+		filter_src_pad.link(interleave_pad)
+
+	def play_file(self, filepath):
+		src = Gst.ElementFactory.make("filesrc", None)
+		src.set_property("location", filepath)
+		decodebin = Gst.ElementFactory.make("decodebin", None)
+		queue = Gst.ElementFactory.make("queue", None)
+		convert = Gst.ElementFactory.make("audioconvert", None)
+		resample = Gst.ElementFactory.make("audioresample", None)
+		bin = Gst.Bin.new("playback_"+filepath+str(time()*1000))
+		for elem in [src, decodebin, queue, convert, resample]:
+			bin.add(elem)
+		src.link(decodebin)
+		queue.link(convert)
+		convert.link(resample)
+		resample_src_pad = resample.get_static_pad("src")
+		bin_pad = Gst.GhostPad.new("src", resample_src_pad)
+		bin.add_pad(bin_pad)
+		self.engine.pipeline.add(bin)
+		mixer_pad = self.mixer.request_pad_simple("sink_%u")
+		bin_pad.link(mixer_pad)
+		def on_pad_added(element, pad):
+			sink_pad = queue.get_static_pad("sink")
+			if not sink_pad.is_linked():
+				pad.link(sink_pad)
+		decodebin.connect("pad-added", on_pad_added)
+		bin.sync_state_with_parent()
+
 class SoundEvent():
 	def __init__(self, time, sound, type):
 		self.time = time
@@ -47,7 +130,8 @@ class SoundEvent():
 		self.type = type
 	def play(self):
 		if self.type == 1:
-			pygame.mixer.Channel(0).play(pygame.mixer.Sound(self.sound))
+			# pygame.mixer.Channel(0).play(pygame.mixer.Sound(self.sound))
+			elsocsatorna.play_file("sound")
 		if self.type == 2:
 			pygame.mixer.Channel(1).play(pygame.mixer.Sound(self.sound))
 
@@ -1423,15 +1507,19 @@ def deleteringpattern(id):
 	db.close()
 	return redirect(url_for("listringpatterns"))
 
+loop = GLib.MainLoop()
+GLibthread = threading.Thread(target=loop.run, daemon=True)
+GLibthread.start()
+gstreamer = GStreamerEngine("Iskolacsengo")
 
 readSettings()
 loadDevices()
 loadTodaysProgramme()
 setDeviceState()
 makeDeviceConnections()
-thread = threading.Thread(target=lambda: app.run(debug=True, host="0.0.0.0", use_reloader=False))
-thread.daemon = True
-thread.start()
+Flaskthread = threading.Thread(target=lambda: app.run(debug=True, host="0.0.0.0", use_reloader=False))
+Flaskthread.daemon = True
+Flaskthread.start()
 while True:
 	time = datetime.now()
 	if int(settings["timeshift"]) != 0:
